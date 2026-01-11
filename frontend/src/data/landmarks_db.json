@@ -1,0 +1,150 @@
+{
+  "tunis": {
+    "city": {
+      "name": "Tunis",
+      "coordinates": [10.1815, 36.8065],
+      "zoom": 12,
+      "description": "Capital and largest city of Tunisia, founded by the Berbers in the 2nd millennium BC"
+    },
+    "landmarks": [
+      {
+        "id": "medina",
+        "name": "Medina of Tunis",
+        "coordinates": [10.1696, 36.8190],
+        "type": "historical",
+        "keywords": ["medina", "old city", "unesco", "world heritage"],
+        "description": "UNESCO World Heritage site, one of the best preserved Islamic cities in the Arab world",
+        "foundedYear": "698 CE",
+        "highlights": [
+          "700 monuments including palaces, mosques, and fountains",
+          "Zitouna Mosque - spiritual heart of the medina",
+          "Traditional souks and markets"
+        ],
+        "imageUrl": "/images/medina-tunis.jpg",
+        "zoom": 18
+      },
+      {
+        "id": "carthage",
+        "name": "Carthage",
+        "coordinates": [10.3233, 36.8529],
+        "type": "archaeological",
+        "keywords": ["carthage", "ruins", "ancient", "phoenician", "hannibal"],
+        "description": "Ancient Phoenician city-state and later Roman city, legendary rival of Rome",
+        "foundedYear": "814 BCE",
+        "highlights": [
+          "Antonine Baths - among the largest Roman baths",
+          "Byrsa Hill - ancient citadel",
+          "Tophet - ancient cemetery"
+        ],
+        "imageUrl": "/images/carthage-ruins.jpg",
+        "zoom": 18
+      },
+      {
+        "id": "bardo",
+        "name": "Bardo National Museum",
+        "coordinates": [10.1347, 36.8109],
+        "type": "museum",
+        "keywords": ["bardo", "museum", "mosaics", "artifacts"],
+        "description": "One of the most important museums in the Mediterranean region, housed in a 19th-century palace",
+        "foundedYear": "1888",
+        "highlights": [
+          "World's largest collection of Roman mosaics",
+          "Punic and early Christian artifacts",
+          "Islamic art and manuscripts"
+        ],
+        "imageUrl": "/images/bardo-museum.jpg",
+        "zoom": 18
+      },
+      {
+        "id": "sidi-bou-said",
+        "name": "Sidi Bou Said",
+        "coordinates": [10.3417, 36.8686],
+        "type": "village",
+        "keywords": ["sidi bou said", "blue and white", "cliff", "village"],
+        "description": "Picturesque cliff-side village famous for its blue and white architecture",
+        "foundedYear": "12th century",
+        "highlights": [
+          "Iconic blue doors and white walls",
+          "Cafes with sweeping Mediterranean views",
+          "Artists and galleries tucked into alleys"
+        ],
+        "imageUrl": "/images/sidi-bou-said.jpg",
+        "zoom": 18
+      }
+    ]
+  },
+  "istanbul": {
+    "city": {
+      "name": "Istanbul",
+      "coordinates": [28.9784, 41.0082],
+      "zoom": 12.5,
+      "description": "Historic city spanning Europe and Asia, once the capital of the Byzantine and Ottoman empires"
+    },
+    "landmarks": [
+      {
+        "id": "hagia-sophia",
+        "name": "Hagia Sophia",
+        "coordinates": [28.9799, 41.0086],
+        "type": "historical",
+        "keywords": ["hagia sophia", "ayasofya", "cathedral", "mosque", "byzantine"],
+        "description": "Iconic former cathedral and mosque known for its massive dome and layered history.",
+        "foundedYear": "537 CE",
+        "highlights": [
+          "Monumental central dome and mosaics",
+          "Byzantine and Ottoman architectural layers",
+          "UNESCO-listed Historic Areas of Istanbul"
+        ],
+        "imageUrl": "/images/istanbul-hagia-sophia.jpg",
+        "zoom": 18.7
+      },
+      {
+        "id": "blue-mosque",
+        "name": "Sultan Ahmed Mosque",
+        "coordinates": [28.9768, 41.0055],
+        "type": "mosque",
+        "keywords": ["blue mosque", "sultan ahmed", "mosque", "iznik tiles"],
+        "description": "17th-century imperial mosque famed for its blue Iznik tiles and six minarets.",
+        "foundedYear": "1616",
+        "highlights": [
+          "Blue tile interior with floral motifs",
+          "Courtyard and cascading domes",
+          "Landmark of the old city skyline"
+        ],
+        "imageUrl": "/images/istanbul-blue-mosque.jpg",
+        "zoom": 18.7
+      },
+      {
+        "id": "topkapi-palace",
+        "name": "Topkapi Palace",
+        "coordinates": [28.9833, 41.0115],
+        "type": "palace",
+        "keywords": ["topkapi", "palace", "ottoman", "museum"],
+        "description": "Ottoman palace complex that served as the imperial residence for centuries.",
+        "foundedYear": "1478",
+        "highlights": [
+          "Imperial courtyards and ornate gates",
+          "Treasury and relics collections",
+          "Views over the Bosphorus"
+        ],
+        "imageUrl": "/images/istanbul-topkapi-palace.jpg",
+        "zoom": 18.6
+      },
+      {
+        "id": "galata-tower",
+        "name": "Galata Tower",
+        "coordinates": [28.9736, 41.0261],
+        "type": "tower",
+        "keywords": ["galata tower", "observation", "genoa", "medieval"],
+        "description": "Medieval stone tower with panoramic views over the Golden Horn.",
+        "foundedYear": "1348",
+        "highlights": [
+          "360-degree observation deck",
+          "Stone tower built by Genoese settlers",
+          "Night views of the Bosphorus"
+        ],
+        "imageUrl": "/images/istanbul-galata-tower.jpg",
+        "zoom": 18.5
+      }
+    ]
+  }
+}

@@ -1,0 +1,50 @@
+# 1. Create structure
+mkdir -p anam-travel-agent/{backend,frontend/src/{components,data,styles,test},docs}
+
+# 2. Backend
+cd backend
+npm init -y
+npm install express cors dotenv
+# Create server.js
+
+# 3. Frontend
+cd ../frontend
+npm create vite@latest . -- --template react-ts
+npm install @anam-ai/js-sdk mapbox-gl framer-motion
+npm install -D @types/mapbox-gl
+# Create components and data files
+
+## What's Different from V1?
+
+Simplified:
+- No Ollama or local LLM
+- No FastAPI backend
+- No text-inference timing
+
+Added:
+- UIOrchestrator class (state machine + tool execution)
+- DebugHUD for observability
+- Mic test view for audio debugging
+
+Same:
+- Mapbox integration
+- Anam SDK usage
+- React frontend
+
+## Architecture Layers
+
+Presentation Layer
+- TravelAgentDemo.tsx (coordinates everything)
+- DebugHUD.tsx (shows metrics)
+
+Orchestration Layer
+- UIOrchestrator.ts (state machine + tool execution)
+
+Data Layer
+- landmarks_db.json (static data)
+- landmarks.ts (typed exports)
+
+External Services
+- Anam SDK (persona + tools)
+- Mapbox GL (mapping)
+- Backend token server (session tokens)

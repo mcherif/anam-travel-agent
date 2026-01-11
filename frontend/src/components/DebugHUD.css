@@ -1,0 +1,335 @@
+/* Debug HUD Styles */
+
+.debug-hud {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 400px;
+  max-height: calc(100vh - 40px);
+  background: rgba(15, 23, 42, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  border: 1px solid rgba(100, 116, 139, 0.3);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  color: #f1f5f9;
+  font-family: 'Monaco', 'Menlo', 'Courier New', monospace;
+  font-size: 13px;
+  overflow-y: auto;
+  z-index: 10000;
+  padding: 20px;
+}
+
+.debug-header {
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(100, 116, 139, 0.3);
+}
+
+.debug-header h2 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.debug-hint {
+  font-size: 11px;
+  color: #94a3b8;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.debug-section {
+  margin-bottom: 24px;
+}
+
+.debug-section h3 {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #cbd5e1;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* State Indicators */
+.state-indicator {
+  display: inline-block;
+  padding: 8px 16px;
+  border-radius: 6px;
+  color: white;
+  font-weight: 600;
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.state-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.state-badge {
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: white;
+  text-transform: uppercase;
+}
+
+.state-detail {
+  color: #94a3b8;
+  font-size: 12px;
+}
+
+.state-detail strong {
+  color: #f1f5f9;
+}
+
+/* Event Display */
+.event-display {
+  background: rgba(51, 65, 85, 0.5);
+  padding: 12px;
+  border-radius: 6px;
+  border: 1px solid rgba(100, 116, 139, 0.2);
+}
+
+.event-type {
+  font-weight: 600;
+  color: #60a5fa;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.event-time {
+  color: #94a3b8;
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+
+.event-data summary {
+  cursor: pointer;
+  color: #cbd5e1;
+  font-size: 11px;
+  margin-top: 8px;
+}
+
+.event-data pre {
+  margin: 8px 0 0 0;
+  padding: 8px;
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 4px;
+  font-size: 10px;
+  overflow-x: auto;
+  color: #94a3b8;
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+/* Tool Call Queue */
+.tool-queue {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tool-call {
+  background: rgba(51, 65, 85, 0.5);
+  padding: 10px;
+  border-radius: 6px;
+  border-left: 3px solid;
+}
+
+.tool-call-pending {
+  border-left-color: #64748b;
+}
+
+.tool-call-executing {
+  border-left-color: #3b82f6;
+  animation: executing 1s ease-in-out infinite;
+}
+
+@keyframes executing {
+  0%, 100% {
+    background: rgba(51, 65, 85, 0.5);
+  }
+  50% {
+    background: rgba(59, 130, 246, 0.1);
+  }
+}
+
+.tool-call-complete {
+  border-left-color: #10b981;
+}
+
+.tool-name {
+  font-weight: 600;
+  color: #f1f5f9;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+
+.tool-status {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+
+.tool-call-pending .tool-status {
+  background: rgba(100, 116, 139, 0.3);
+  color: #cbd5e1;
+}
+
+.tool-call-executing .tool-status {
+  background: rgba(59, 130, 246, 0.3);
+  color: #60a5fa;
+}
+
+.tool-call-complete .tool-status {
+  background: rgba(16, 185, 129, 0.3);
+  color: #34d399;
+}
+
+.tool-time {
+  color: #64748b;
+  font-size: 10px;
+  margin-top: 4px;
+}
+
+.tool-args summary {
+  cursor: pointer;
+  color: #94a3b8;
+  font-size: 10px;
+  margin-top: 6px;
+}
+
+.tool-args pre {
+  margin: 6px 0 0 0;
+  padding: 6px;
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 3px;
+  font-size: 9px;
+  overflow-x: auto;
+  color: #64748b;
+}
+
+/* Latency Table */
+.latency-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.latency-table td {
+  padding: 6px 0;
+  font-size: 12px;
+}
+
+.latency-table td:first-child {
+  color: #94a3b8;
+  padding-right: 12px;
+}
+
+.latency-table td:last-child {
+  text-align: right;
+  font-weight: 600;
+}
+
+/* Performance Indicators */
+.performance-indicators {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.perf-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.perf-label {
+  color: #94a3b8;
+  font-size: 11px;
+  min-width: 80px;
+}
+
+.perf-bar {
+  height: 6px;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+  flex: 1;
+}
+
+.perf-value {
+  color: #f1f5f9;
+  font-size: 11px;
+  font-weight: 600;
+  min-width: 50px;
+  text-align: right;
+}
+
+/* No Data State */
+.no-data {
+  color: #64748b;
+  font-style: italic;
+  font-size: 11px;
+  padding: 8px;
+  text-align: center;
+}
+
+/* Scrollbar */
+.debug-hud::-webkit-scrollbar {
+  width: 6px;
+}
+
+.debug-hud::-webkit-scrollbar-track {
+  background: rgba(51, 65, 85, 0.3);
+  border-radius: 3px;
+}
+
+.debug-hud::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.5);
+  border-radius: 3px;
+}
+
+.debug-hud::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.7);
+}
+
+/* Keyboard hint in main UI */
+.debug-hint {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(10px);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  color: #94a3b8;
+  z-index: 1000;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+.debug-hint kbd {
+  background: rgba(100, 116, 139, 0.3);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-family: Monaco, Menlo, Courier New, monospace;
+  font-size: 10px;
+  color: #cbd5e1;
+}
