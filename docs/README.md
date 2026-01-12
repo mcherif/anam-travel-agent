@@ -103,9 +103,11 @@ VITE_BACKEND_URL=http://localhost:3001
 VITE_CITY=tunis
 VITE_DEMO_MODE=true
 VITE_TOOL_FALLBACK=false
+VITE_MAPILLARY_TOKEN=
 ```
 
 Set `VITE_CITY` to `tunis` or `istanbul` to choose the default city.
+Set `VITE_MAPILLARY_TOKEN` to enable street-level imagery (Mapillary).
 
 ## Usage
 

@@ -10,7 +10,7 @@
       {
         "id": "medina",
         "name": "Medina of Tunis",
-        "coordinates": [10.1696, 36.8190],
+        "coordinates": [10.166667, 36.816667],
         "type": "historical",
         "keywords": ["medina", "old city", "unesco", "world heritage"],
         "description": "UNESCO World Heritage site, one of the best preserved Islamic cities in the Arab world",
@@ -26,7 +26,7 @@
       {
         "id": "carthage",
         "name": "Carthage",
-        "coordinates": [10.3233, 36.8529],
+        "coordinates": [10.330556, 36.855000],
         "type": "archaeological",
         "keywords": ["carthage", "ruins", "ancient", "phoenician", "hannibal"],
         "description": "Ancient Phoenician city-state and later Roman city, legendary rival of Rome",
@@ -42,7 +42,7 @@
       {
         "id": "bardo",
         "name": "Bardo National Museum",
-        "coordinates": [10.1347, 36.8109],
+        "coordinates": [10.134508, 36.809386],
         "type": "museum",
         "keywords": ["bardo", "museum", "mosaics", "artifacts"],
         "description": "One of the most important museums in the Mediterranean region, housed in a 19th-century palace",
@@ -58,7 +58,7 @@
       {
         "id": "sidi-bou-said",
         "name": "Sidi Bou Said",
-        "coordinates": [10.3417, 36.8686],
+        "coordinates": [10.333333, 36.866667],
         "type": "village",
         "keywords": ["sidi bou said", "blue and white", "cliff", "village"],
         "description": "Picturesque cliff-side village famous for its blue and white architecture",
@@ -84,7 +84,7 @@
       {
         "id": "hagia-sophia",
         "name": "Hagia Sophia",
-        "coordinates": [28.9799, 41.0086],
+        "coordinates": [28.980000, 41.008333],
         "type": "historical",
         "keywords": ["hagia sophia", "ayasofya", "cathedral", "mosque", "byzantine"],
         "description": "Iconic former cathedral and mosque known for its massive dome and layered history.",
@@ -100,7 +100,7 @@
       {
         "id": "blue-mosque",
         "name": "Sultan Ahmed Mosque",
-        "coordinates": [28.9768, 41.0055],
+        "coordinates": [28.976825, 41.005385],
         "type": "mosque",
         "keywords": ["blue mosque", "sultan ahmed", "mosque", "iznik tiles"],
         "description": "17th-century imperial mosque famed for its blue Iznik tiles and six minarets.",
@@ -116,7 +116,7 @@
       {
         "id": "topkapi-palace",
         "name": "Topkapi Palace",
-        "coordinates": [28.9833, 41.0115],
+        "coordinates": [28.984000, 41.013000],
         "type": "palace",
         "keywords": ["topkapi", "palace", "ottoman", "museum"],
         "description": "Ottoman palace complex that served as the imperial residence for centuries.",
@@ -132,7 +132,7 @@
       {
         "id": "galata-tower",
         "name": "Galata Tower",
-        "coordinates": [28.9736, 41.0261],
+        "coordinates": [28.974167, 41.025556],
         "type": "tower",
         "keywords": ["galata tower", "observation", "genoa", "medieval"],
         "description": "Medieval stone tower with panoramic views over the Golden Horn.",

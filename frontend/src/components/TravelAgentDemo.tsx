@@ -41,6 +41,7 @@ type DebugMetrics = {
 
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL as string | undefined;
+const MAPILLARY_TOKEN = import.meta.env.VITE_MAPILLARY_TOKEN as string | undefined;
 const DEMO_MODE = import.meta.env.VITE_DEMO_MODE !== 'false';
 const MIC_TEST_MODE = import.meta.env.VITE_MIC_TEST === 'true';
 const TOOL_FALLBACK_MODE = import.meta.env.VITE_TOOL_FALLBACK === 'true';
@@ -143,6 +144,11 @@ const normalizeToolArgs = (rawArgs: unknown, landmarks: LandmarkMap) => {
   }
 
   return args;
+};
+
+const findCityInText = (text: string, lookup: Array<{ id: CityId; name: string }>) => {
+  const normalized = normalizeText(text);
+  return lookup.find((city) => normalized.includes(city.name))?.id;
 };
 
 const MicTestView = () => {
@@ -318,6 +324,31 @@ const TravelAgentDemo = () => {
     () => CITY_IDS.map((id) => ({ id, name: getCityData(id).city.name })),
     []
   );
+  const supportedCitiesLabel = cityOptions.map((city) => city.name).join(', ');
+  const cityLookup = useMemo(
+    () =>
+      CITY_IDS.map((id) => ({
+        id,
+        name: getCityData(id).city.name.toLowerCase()
+      })),
+    []
+  );
+  const cityConfig = useMemo(() => {
+    const allLandmarksById: LandmarkMap = {};
+    const landmarkCityMap: Record<string, CityId> = {};
+    CITY_IDS.forEach((id) => {
+      const data = getCityData(id);
+      data.landmarks.forEach((landmark) => {
+        allLandmarksById[landmark.id] = landmark;
+        landmarkCityMap[landmark.id] = id;
+      });
+    });
+    return {
+      allLandmarksById,
+      landmarkCityMap,
+      allLandmarkIds: Object.keys(allLandmarksById)
+    };
+  }, []);
 
   const [anamClient, setAnamClient] = useState<ReturnType<typeof createClient> | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -331,6 +362,11 @@ const TravelAgentDemo = () => {
   const [startupError, setStartupError] = useState<string | null>(null);
   const [debugZoom, setDebugZoom] = useState(18.5);
   const [applyDebugZoom, setApplyDebugZoom] = useState(true);
+  const [streetViewUrl, setStreetViewUrl] = useState<string | null>(null);
+  const [streetViewStatus, setStreetViewStatus] = useState<
+    'idle' | 'loading' | 'ready' | 'unavailable' | 'error'
+  >('idle');
+  const [userVideoActive, setUserVideoActive] = useState(false);
   const debugZoomRef = useRef(debugZoom);
   const applyDebugZoomRef = useRef(applyDebugZoom);
   const toolCallsSeenRef = useRef(false);
@@ -339,6 +375,8 @@ const TravelAgentDemo = () => {
 
   const orchestratorRef = useRef<UIOrchestrator | null>(null);
   const landmarksRef = useRef<LandmarkMap>(landmarksById);
+  const selectedCityRef = useRef<CityId>(selectedCity);
+  const skipCityFlyRef = useRef(false);
   const [uiState, setUIState] = useState(UIState.IDLE);
   const [showInterrupted, setShowInterrupted] = useState(false);
 
@@ -356,6 +394,8 @@ const TravelAgentDemo = () => {
 
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const map = useRef<mapboxgl.Map | null>(null);
+  const userVideoRef = useRef<HTMLVideoElement | null>(null);
+  const userVideoStreamRef = useRef<MediaStream | null>(null);
 
   const [currentLandmark, setCurrentLandmark] = useState<Landmark | null>(null);
 
@@ -386,6 +426,10 @@ const TravelAgentDemo = () => {
   }, [landmarksById]);
 
   useEffect(() => {
+    selectedCityRef.current = selectedCity;
+  }, [selectedCity]);
+
+  useEffect(() => {
     const nextMessage = `Tell me about ${cityData.city.name}`;
     setManualMessage((prev) => {
       if (!prev || prev.toLowerCase().startsWith('tell me about')) {
@@ -400,6 +444,32 @@ const TravelAgentDemo = () => {
     fallbackScheduledRef.current = false;
     recentToolCallsRef.current = [];
   }, [selectedCity]);
+
+  const stopUserVideo = () => {
+    if (userVideoStreamRef.current) {
+      userVideoStreamRef.current.getTracks().forEach((track) => track.stop());
+      userVideoStreamRef.current = null;
+    }
+    setUserVideoActive(false);
+    if (userVideoRef.current) {
+      userVideoRef.current.srcObject = null;
+    }
+  };
+
+  const switchCity = (nextCity: CityId, options?: { skipFly?: boolean }) => {
+    if (nextCity === selectedCityRef.current) {
+      return;
+    }
+
+    if (options?.skipFly) {
+      skipCityFlyRef.current = true;
+    }
+
+    const nextLandmarks = buildLandmarksMap(getCityData(nextCity).landmarks);
+    landmarksRef.current = nextLandmarks;
+    orchestratorRef.current?.setLandmarks(nextLandmarks);
+    setSelectedCity(nextCity);
+  };
 
   useEffect(() => {
     if (map.current || !mapContainer.current) {
@@ -418,48 +488,45 @@ const TravelAgentDemo = () => {
     map.current.addControl(new mapboxgl.NavigationControl());
 
     map.current.on('load', () => {
-      const layers = map.current?.getStyle().layers || [];
-      const labelLayer = layers.find(
-        (layer) => layer.type === 'symbol' && layer.layout && layer.layout['text-field']
-      );
-
-      if (labelLayer && map.current) {
-        map.current.addLayer(
-          {
-            id: '3d-buildings',
-            source: 'composite',
-            'source-layer': 'building',
-            filter: ['==', 'extrude', 'true'],
-            type: 'fill-extrusion',
-            minzoom: 15,
-            paint: {
-              'fill-extrusion-color': '#aaa',
-              'fill-extrusion-height': [
-                'interpolate',
-                ['linear'],
-                ['zoom'],
-                15,
-                0,
-                15.05,
-                ['get', 'height']
-              ],
-              'fill-extrusion-base': [
-                'interpolate',
-                ['linear'],
-                ['zoom'],
-                15,
-                0,
-                15.05,
-                ['get', 'min_height']
-              ],
-              'fill-extrusion-opacity': 0.6
-            }
-          },
-          labelLayer.id
-        );
-      }
-
       if (map.current) {
+        if (!map.current.getSource('mapbox-dem')) {
+          map.current.addSource('mapbox-dem', {
+            type: 'raster-dem',
+            url: 'mapbox://mapbox.mapbox-terrain-dem-v1',
+            tileSize: 512,
+            maxzoom: 14
+          });
+          map.current.setTerrain({ source: 'mapbox-dem', exaggeration: 1.2 });
+        }
+
+        if (!map.current.getLayer('sky')) {
+          map.current.addLayer({
+            id: 'sky',
+            type: 'sky',
+            paint: {
+              'sky-type': 'atmosphere',
+              'sky-atmosphere-sun': [0.0, 0.0],
+              'sky-atmosphere-sun-intensity': 10
+            }
+          });
+        }
+
+        map.current.setFog({
+          range: [0.8, 8],
+          color: '#eef2ff',
+          'high-color': '#f8fafc',
+          'space-color': '#dbeafe',
+          'horizon-blend': 0.2,
+          'star-intensity': 0.1
+        });
+
+        map.current.setLight({
+          anchor: 'viewport',
+          color: '#ffffff',
+          intensity: 0.6,
+          position: [1.15, 210, 30]
+        });
+
         applyEnglishLabels(map.current);
         map.current.on('styledata', () => applyEnglishLabels(map.current as mapboxgl.Map));
       }
@@ -482,7 +549,77 @@ const TravelAgentDemo = () => {
   }, [mapReady, anamReady]);
 
   useEffect(() => {
+    if (!currentLandmark) {
+      setStreetViewUrl(null);
+      setStreetViewStatus('idle');
+      return;
+    }
+
+    if (!MAPILLARY_TOKEN) {
+      setStreetViewUrl(null);
+      setStreetViewStatus('unavailable');
+      return;
+    }
+
+    const controller = new AbortController();
+    let isActive = true;
+
+    const fetchStreetView = async () => {
+      setStreetViewStatus('loading');
+      const [lng, lat] = currentLandmark.coordinates;
+      const endpoint = new URL('https://graph.mapillary.com/images');
+      endpoint.searchParams.set('access_token', MAPILLARY_TOKEN);
+      endpoint.searchParams.set('fields', 'id,thumb_1024_url');
+      endpoint.searchParams.set('closeto', `${lng},${lat}`);
+      endpoint.searchParams.set('limit', '1');
+
+      try {
+        const response = await fetch(endpoint.toString(), { signal: controller.signal });
+        if (!response.ok) {
+          throw new Error(`Mapillary error ${response.status}`);
+        }
+        const data = (await response.json()) as {
+          data?: Array<{ id?: string; thumb_1024_url?: string }>;
+        };
+        const image = data?.data?.[0];
+        if (!isActive) {
+          return;
+        }
+        if (image?.thumb_1024_url) {
+          setStreetViewUrl(image.thumb_1024_url);
+          setStreetViewStatus('ready');
+        } else {
+          setStreetViewUrl(null);
+          setStreetViewStatus('unavailable');
+        }
+      } catch (error) {
+        if (!isActive) {
+          return;
+        }
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+        console.warn('Failed to load Mapillary street image:', error);
+        setStreetViewUrl(null);
+        setStreetViewStatus('error');
+      }
+    };
+
+    fetchStreetView();
+
+    return () => {
+      isActive = false;
+      controller.abort();
+    };
+  }, [currentLandmark, MAPILLARY_TOKEN]);
+
+  useEffect(() => {
     if (!map.current || !mapReady) {
+      return;
+    }
+
+    if (skipCityFlyRef.current) {
+      skipCityFlyRef.current = false;
       return;
     }
 
@@ -511,8 +648,29 @@ const TravelAgentDemo = () => {
         const cityName = cityData.city.name;
         const primaryLandmarkId = primaryLandmark?.id ?? landmarkIds[0] ?? 'medina';
         const primaryLandmarkName = primaryLandmark?.name ?? 'the city center';
+        const citySummaries = CITY_IDS.map((id) => {
+          const data = getCityData(id);
+          const starter = data.landmarks[0];
+          return `- ${data.city.name}: start with ${starter?.name ?? 'the city center'} (id: ${starter?.id ?? 'center'})`;
+        }).join('\n');
 
         const tools = [
+          {
+            type: 'client',
+            name: 'set_city',
+            description: 'Switch the active city before discussing its landmarks.',
+            parameters: {
+              type: 'object',
+              properties: {
+                id: {
+                  type: 'string',
+                  description: 'City identifier',
+                  enum: CITY_IDS
+                }
+              },
+              required: ['id']
+            }
+          },
           {
             type: 'client',
             name: 'fly_to_landmark',
@@ -524,7 +682,7 @@ const TravelAgentDemo = () => {
                 id: {
                   type: 'string',
                   description: 'Landmark identifier',
-                  enum: landmarkIds
+                  enum: cityConfig.allLandmarkIds
                 },
                 zoom: {
                   type: 'number',
@@ -545,7 +703,7 @@ const TravelAgentDemo = () => {
                 id: {
                   type: 'string',
                   description: 'Landmark identifier (must match fly_to_landmark id)',
-                  enum: landmarkIds
+                  enum: cityConfig.allLandmarkIds
                 }
               },
               required: ['id']
@@ -563,11 +721,16 @@ const TravelAgentDemo = () => {
           }
         ];
 
-        const systemPrompt = `You are Sofia, an enthusiastic travel agent specializing in ${cityName}.
+        const systemPrompt = `You are Sofia, an enthusiastic travel agent for these cities: ${CITY_IDS.map(
+          (id) => getCityData(id).city.name
+        ).join(', ')}.
+When the user requests a different city, call set_city({ id }) before discussing its landmarks.
 You MUST call at least one tool in every response that mentions a place. If the user asks about ${cityName}, start with ${primaryLandmarkName}. Use zoom 18-19 unless the tool call specifies otherwise.
 
 ## Available Tools
 You have these tools to control the map visualization:
+
+0. **set_city({ id })** - Switch the active city (call before discussing a different city)
 
 1. **fly_to_landmark({ id, zoom })** - Animate map to a landmark
    - Call this RIGHT BEFORE you mention a landmark for the first time
@@ -587,6 +750,9 @@ For each landmark you discuss:
 3. Call show_landmark_panel({ id: "landmark-id" })
 4. Mention key highlights
 5. Before moving to next landmark, call dim_previous_landmarks()
+
+## City Starters
+${citySummaries}
 
 ## Speaking Style
 - Warm and enthusiastic but not overwhelming
@@ -648,6 +814,8 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
 
     initAnam();
   }, [anamClient, landmarkIds, selectedCity]);
+
+  useEffect(() => () => stopUserVideo(), []);
 
   const setupAnamListeners = (client: ReturnType<typeof createClient>) => {
     client.addListener(AnamEvent.CONNECTION_ESTABLISHED, () => {
@@ -736,6 +904,42 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
         };
       }
 
+      if (toolName === 'set_city') {
+        const nextCity = typeof normalizedArgs.id === 'string' ? normalizedArgs.id.toLowerCase() : '';
+        if (CITY_IDS.includes(nextCity as CityId)) {
+          switchCity(nextCity as CityId);
+        }
+
+        const existingQueue = debugMetricsRef.current.toolCallQueue;
+        updateDebugMetrics({
+          lastEvent: {
+            type: 'TOOL_CALL',
+            timestamp: toolCallStart,
+            data: event
+          },
+          toolCallQueue: [
+            ...existingQueue,
+            {
+              name: toolName,
+              args: normalizedArgs,
+              timestamp: toolCallStart,
+              status: 'complete'
+            }
+          ]
+        });
+        return;
+      }
+
+      if (
+        (toolName === 'fly_to_landmark' || toolName === 'show_landmark_panel') &&
+        typeof normalizedArgs.id === 'string'
+      ) {
+        const targetCity = cityConfig.landmarkCityMap[normalizedArgs.id];
+        if (targetCity && targetCity !== selectedCityRef.current) {
+          switchCity(targetCity, { skipFly: true });
+        }
+      }
+
       const key = `${toolName}:${JSON.stringify(normalizedArgs)}`;
       const now = Date.now();
       recentToolCallsRef.current = recentToolCallsRef.current.filter((entry) => now - entry.timestamp < 500);
@@ -814,6 +1018,12 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
           scheduleFallbackTools();
         }
       } else if (role === 'user') {
+        const text = typeof event.text === 'string' ? event.text : '';
+        const requestedCity = text ? findCityInText(text, cityLookup) : undefined;
+        if (requestedCity) {
+          switchCity(requestedCity);
+        }
+
         if (debugMetricsRef.current.personaState === 'speaking') {
           orchestratorRef.current?.handleInterrupt();
         }
@@ -888,6 +1098,21 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
       } catch (error) {
         console.warn('Microphone access failed, continuing without input audio.', error);
         setMicStatus('denied');
+      }
+
+      stopUserVideo();
+      try {
+        const videoStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user' }
+        });
+        userVideoStreamRef.current = videoStream;
+        if (userVideoRef.current) {
+          userVideoRef.current.srcObject = videoStream;
+        }
+        setUserVideoActive(true);
+      } catch (error) {
+        console.warn('Camera access failed, continuing without video.', error);
+        setUserVideoActive(false);
       }
 
       await anamClient.streamToVideoElement('anam-video', userAudioStream);
@@ -1031,14 +1256,40 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
       <div className="persona-container">
         <video id="anam-video" autoPlay playsInline className="persona-video" />
 
-        {!isConnected && (
-          <div className="start-panel">
-            <button onClick={startConversation} className="start-button">
-              Start Your Journey
-            </button>
-            {startupError && <div className="manual-error">{startupError}</div>}
+        {userVideoActive && (
+          <div className="user-video-preview">
+            <video ref={userVideoRef} autoPlay playsInline muted className="user-video-element" />
+            <span className="user-video-label">You</span>
           </div>
         )}
+
+        {!isConnected && (
+          <div className="start-panel">
+            <div className="city-picker">
+            <label className="city-picker-label" htmlFor="city-picker-start">
+              Choose a city
+            </label>
+            <select
+              id="city-picker-start"
+              className="city-picker-select"
+              value={selectedCity}
+              onChange={(event) => switchCity(event.target.value as CityId)}
+            >
+              {cityOptions.map((city) => (
+                <option key={city.id} value={city.id}>
+                  {city.name}
+                </option>
+              ))}
+            </select>
+            <div className="city-picker-supported">Supported: {supportedCitiesLabel}</div>
+            <div className="city-picker-hint">Or say: "Switch to Istanbul"</div>
+          </div>
+          <button onClick={startConversation} className="start-button">
+            Start Your Journey
+          </button>
+          {startupError && <div className="manual-error">{startupError}</div>}
+        </div>
+      )}
 
         {debugMetrics.personaState === 'speaking' && !showInterrupted && (
           <div className="speaking-indicator">
@@ -1050,6 +1301,25 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
 
       <div className="map-container">
         <div ref={mapContainer} className="map" />
+        <div className="city-overlay">
+          <label className="city-picker-label" htmlFor="city-picker-overlay">
+            City
+          </label>
+          <select
+            id="city-picker-overlay"
+            className="city-picker-select"
+            value={selectedCity}
+            onChange={(event) => switchCity(event.target.value as CityId)}
+          >
+            {cityOptions.map((city) => (
+              <option key={city.id} value={city.id}>
+                {city.name}
+              </option>
+            ))}
+          </select>
+          <div className="city-picker-supported">Supported: {supportedCitiesLabel}</div>
+          <div className="city-picker-hint">Say: "Switch to Istanbul"</div>
+        </div>
 
         <AnimatePresence>
           {currentLandmark && (
@@ -1090,6 +1360,30 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
                   <strong>Founded:</strong> {currentLandmark.foundedYear}
                 </div>
               )}
+
+              <div className="street-view-panel">
+                <h3>Street View</h3>
+                {streetViewStatus === 'ready' && streetViewUrl && (
+                  <img
+                    src={streetViewUrl}
+                    alt={`Street view near ${currentLandmark.name}`}
+                    className="street-view-image"
+                  />
+                )}
+                {streetViewStatus === 'loading' && (
+                  <p className="street-view-status">Loading street imagery...</p>
+                )}
+                {streetViewStatus === 'unavailable' && (
+                  <p className="street-view-status">
+                    {MAPILLARY_TOKEN
+                      ? 'No street imagery found nearby.'
+                      : 'Set VITE_MAPILLARY_TOKEN to show street imagery.'}
+                  </p>
+                )}
+                {streetViewStatus === 'error' && (
+                  <p className="street-view-status">Street imagery failed to load.</p>
+                )}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
@@ -1145,8 +1439,7 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
               id="city-select"
               className="manual-input"
               value={selectedCity}
-              onChange={(event) => setSelectedCity(event.target.value as CityId)}
-              disabled={Boolean(anamClient)}
+              onChange={(event) => switchCity(event.target.value as CityId)}
             >
               {cityOptions.map((city) => (
                 <option key={city.id} value={city.id}>

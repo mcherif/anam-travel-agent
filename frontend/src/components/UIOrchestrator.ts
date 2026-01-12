@@ -172,6 +172,7 @@ export class UIOrchestrator {
         this.addMarker(landmark);
         this.state.currentLandmark = id;
         this.state.highlightedLandmarks.add(id);
+        this.setCurrentLandmark(landmark);
       }
     }, 1000);
 
