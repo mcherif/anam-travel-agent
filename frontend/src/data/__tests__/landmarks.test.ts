@@ -10,8 +10,8 @@ describe('landmarks data', () => {
 
   it('contains the MVP landmarks', () => {
     const ids = Object.keys(getLandmarksByCity('tunis'));
-    expect(ids).toEqual(expect.arrayContaining(['medina', 'carthage', 'bardo', 'sidi-bou-said']));
-    expect(ids.length).toBe(4);
+    expect(ids).toEqual(expect.arrayContaining(['medina', 'carthage', 'bardo', 'sidi-bou-said', 'zitouna-mosque']));
+    expect(ids.length).toBe(5);
   });
 
   it('includes Istanbul landmarks', () => {

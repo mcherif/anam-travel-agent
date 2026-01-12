@@ -9,6 +9,7 @@ export type Landmark = {
   foundedYear?: string;
   highlights: string[];
   imageUrl: string;
+  imageUrls?: string[];
   zoom: number;
 };
 

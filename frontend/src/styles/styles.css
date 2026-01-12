@@ -31,8 +31,8 @@
 
 .user-video-preview {
   position: absolute;
-  bottom: 20px;
-  right: 20px;
+  top: 20px;
+  left: 20px;
   width: 140px;
   height: 100px;
   border-radius: 12px;
@@ -58,6 +58,117 @@
   background: rgba(15, 23, 42, 0.6);
   padding: 2px 6px;
   border-radius: 999px;
+}
+
+.camera-panel {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 10px 12px;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.2);
+  z-index: 140;
+  min-width: 180px;
+}
+
+.camera-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.camera-panel-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.camera-toggle {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: none;
+  background: #111827;
+  color: #ffffff;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.camera-toggle:hover {
+  background: #1f2937;
+}
+
+.camera-panel-collapsed {
+  min-width: 120px;
+  padding: 8px 10px;
+}
+
+.camera-panel-collapsed .camera-panel-actions,
+.camera-panel-collapsed .city-picker-label,
+.camera-panel-collapsed .city-picker-select,
+.camera-panel-collapsed .camera-error {
+  display: none;
+}
+
+.camera-panel-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.camera-button {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: none;
+  background: #111827;
+  color: #ffffff;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.camera-button:hover {
+  background: #1f2937;
+}
+
+.camera-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.camera-button-secondary {
+  background: #334155;
+}
+
+.camera-button-secondary:hover {
+  background: #475569;
+}
+
+.camera-status {
+  font-size: 12px;
+  color: #334155;
+}
+
+.camera-status-active {
+  color: #16a34a;
+}
+
+.camera-status-starting {
+  color: #d97706;
+}
+
+.camera-status-error {
+  color: #b91c1c;
+}
+
+.camera-error {
+  font-size: 12px;
+  color: #b91c1c;
 }
 
 .start-button {

@@ -11,6 +11,69 @@ These assets are sourced from Wikimedia Commons and require attribution per thei
 - Author: Kritzolina (https://commons.wikimedia.org/wiki/User:Kritzolina)
 - Attribution: "Kritzolina, CC BY-SA 4.0, via Wikimedia Commons"
 
+## Medina of Tunis (Street)
+- File: Street in the medina of Tunis 01.jpg
+- Source page: https://commons.wikimedia.org/wiki/File:Street_in_the_medina_of_Tunis_01.jpg
+- Direct URL: https://upload.wikimedia.org/wikipedia/commons/f/fa/Street_in_the_medina_of_Tunis_01.jpg
+- Local file: `frontend/public/images/medina-tunis-street-1.jpg`
+- License: CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0)
+- Author: Kritzolina (https://commons.wikimedia.org/wiki/User:Kritzolina)
+- Attribution: "Kritzolina, CC BY-SA 4.0, via Wikimedia Commons"
+
+## Medina of Tunis (Street 2)
+- File: Street in the medina of Tunis 02.jpg
+- Source page: https://commons.wikimedia.org/wiki/File:Street_in_the_medina_of_Tunis_02.jpg
+- Direct URL: https://upload.wikimedia.org/wikipedia/commons/4/4a/Street_in_the_medina_of_Tunis_02.jpg
+- Local file: `frontend/public/images/medina-tunis-street-3.jpg`
+- License: CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0)
+- Author: Kritzolina (https://commons.wikimedia.org/wiki/User:Kritzolina)
+- Attribution: "Kritzolina, CC BY-SA 4.0, via Wikimedia Commons"
+
+## Medina of Tunis (Door 1)
+- File: Door in the medina of Tunis 02.jpg
+- Source page: https://commons.wikimedia.org/wiki/File:Door_in_the_medina_of_Tunis_02.jpg
+- Direct URL: https://upload.wikimedia.org/wikipedia/commons/0/03/Door_in_the_medina_of_Tunis_02.jpg
+- Local file: `frontend/public/images/medina-tunis-door-1.jpg`
+- License: CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0)
+- Author: Kritzolina (https://commons.wikimedia.org/wiki/User:Kritzolina)
+- Attribution: "Kritzolina, CC BY-SA 4.0, via Wikimedia Commons"
+
+## Medina of Tunis (Door 2)
+- File: Door in the medina of Tunis 03.jpg
+- Source page: https://commons.wikimedia.org/wiki/File:Door_in_the_medina_of_Tunis_03.jpg
+- Direct URL: https://upload.wikimedia.org/wikipedia/commons/2/29/Door_in_the_medina_of_Tunis_03.jpg
+- Local file: `frontend/public/images/medina-tunis-door-2.jpg`
+- License: CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0)
+- Author: Kritzolina (https://commons.wikimedia.org/wiki/User:Kritzolina)
+- Attribution: "Kritzolina, CC BY-SA 4.0, via Wikimedia Commons"
+
+## Medina of Tunis (Souq 3)
+- File: Souq in the Medina of Tunis 06.jpg
+- Source page: https://commons.wikimedia.org/wiki/File:Souq_in_the_Medina_of_Tunis_06.jpg
+- Direct URL: https://upload.wikimedia.org/wikipedia/commons/0/09/Souq_in_the_Medina_of_Tunis_06.jpg
+- Local file: `frontend/public/images/medina-tunis-souk-3.jpg`
+- License: CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0)
+- Author: Kritzolina (https://commons.wikimedia.org/wiki/User:Kritzolina)
+- Attribution: "Kritzolina, CC BY-SA 4.0, via Wikimedia Commons"
+
+## Medina of Tunis (Souk Chawachine - Day)
+- File: Souksh.JPG
+- Source page: https://commons.wikimedia.org/wiki/File:Souksh.JPG
+- Direct URL: https://upload.wikimedia.org/wikipedia/commons/4/4e/Souksh.JPG
+- Local file: `frontend/public/images/medina-tunis-souk-chawachine-day.jpg`
+- License: CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0)
+- Author: Youssefbensaad (https://commons.wikimedia.org/wiki/User:Youssefbensaad)
+- Attribution: "Youssefbensaad, CC BY-SA 4.0, via Wikimedia Commons"
+
+## Souk El Attarine (Medina of Tunis)
+- File: Souk El Attarine.jpg
+- Source page: https://commons.wikimedia.org/wiki/File:Souk_El_Attarine.jpg
+- Direct URL: https://upload.wikimedia.org/wikipedia/commons/b/bd/Souk_El_Attarine.jpg
+- Local file: `frontend/public/images/medina-tunis-souk-attarine.jpg`
+- License: CC BY-SA 3.0 (https://creativecommons.org/licenses/by-sa/3.0)
+- Author: Cimoi (https://commons.wikimedia.org/wiki/User:Cimoi)
+- Attribution: "Cimoi, CC BY-SA 3.0, via Wikimedia Commons"
+
 ## Carthage (Antonine Baths Ruins)
 - File: 01996 01434 Ruins of Antonine Baths at Carthage.jpg
 - Source page: https://commons.wikimedia.org/wiki/File:01996_01434_Ruins_of_Antonine_Baths_at_Carthage.jpg
@@ -37,6 +100,60 @@ These assets are sourced from Wikimedia Commons and require attribution per thei
 - License: CC BY 4.0 (https://creativecommons.org/licenses/by/4.0)
 - Author: Habib M'henni (https://www.wikidata.org/wiki/Q105725266)
 - Attribution: "Habib M'henni, CC BY 4.0, via Wikimedia Commons"
+
+## Sidi Bou Said (Street)
+- File: Street in the medina of Tunis 03.jpg
+- Source page: https://commons.wikimedia.org/wiki/File:Street_in_the_medina_of_Tunis_03.jpg
+- Direct URL: https://upload.wikimedia.org/wikipedia/commons/f/f0/Street_in_the_medina_of_Tunis_03.jpg
+- Local file: `frontend/public/images/sidi-bou-said-street.jpg`
+- License: CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0)
+- Author: Kritzolina (https://commons.wikimedia.org/wiki/User:Kritzolina)
+- Attribution: "Kritzolina, CC BY-SA 4.0, via Wikimedia Commons"
+
+## Sidi Bou Said (Ennejma Ezzahra)
+- File: Jardin perse Palais Ennejma Ezzahra Sidi Bousaid.jpg
+- Source page: https://commons.wikimedia.org/wiki/File:Jardin_perse_Palais_Ennejma_Ezzahra_Sidi_Bousaid.jpg
+- Direct URL: https://upload.wikimedia.org/wikipedia/commons/d/d2/Jardin_perse_Palais_Ennejma_Ezzahra_Sidi_Bousaid.jpg
+- Local file: `frontend/public/images/sidi-bou-said-ennejma-ezzahra.jpg`
+- License: CC0 (http://creativecommons.org/publicdomain/zero/1.0/deed.en)
+- Author: Smailtn (https://commons.wikimedia.org/wiki/User:Smailtn)
+- Attribution: "Smailtn, CC0, via Wikimedia Commons"
+
+## Sidi Bou Said (Ennejma Ezzahra Interior)
+- File: Inside Baron d'Erlanger Palace in Sidi Bou Said, Tunisia.jpg
+- Source page: https://commons.wikimedia.org/wiki/File:Inside_Baron_d%27Erlanger_Palace_in_Sidi_Bou_Said%2C_Tunisia.jpg
+- Direct URL: https://upload.wikimedia.org/wikipedia/commons/a/a1/Inside_Baron_d%27Erlanger_Palace_in_Sidi_Bou_Said%2C_Tunisia.jpg
+- Local file: `frontend/public/images/sidi-bou-said-ennejma-ezzahra-interior.jpg`
+- License: CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0)
+- Author: LilaTretikov (WMF) (https://commons.wikimedia.org/wiki/User:LilaTretikov_(WMF))
+- Attribution: "LilaTretikov (WMF), CC BY-SA 4.0, via Wikimedia Commons"
+
+## Sidi Bou Said (Hill View)
+- File: Sidi Bou Said 1992 01.jpg
+- Source page: https://commons.wikimedia.org/wiki/File:Sidi_Bou_Said_1992_01.jpg
+- Direct URL: https://upload.wikimedia.org/wikipedia/commons/b/bb/Sidi_Bou_Said_1992_01.jpg
+- Local file: `frontend/public/images/sidi-bou-said-hill-view-2.jpg`
+- License: CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0)
+- Author: LBM1948 (https://commons.wikimedia.org/wiki/User:LBM1948)
+- Attribution: "LBM1948, CC BY-SA 4.0, via Wikimedia Commons"
+
+## Zitouna Mosque (Tunis)
+- File: Minaret of Mosque Zitouna.jpg
+- Source page: https://commons.wikimedia.org/wiki/File:Minaret_of_Mosque_Zitouna.jpg
+- Direct URL: https://upload.wikimedia.org/wikipedia/commons/9/92/Minaret_of_Mosque_Zitouna.jpg
+- Local file: `frontend/public/images/zitouna-mosque.jpg`
+- License: CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0)
+- Author: IssamBarhoumi (https://commons.wikimedia.org/wiki/User:IssamBarhoumi)
+- Attribution: "IssamBarhoumi, CC BY-SA 4.0, via Wikimedia Commons"
+
+## Zitouna Mosque (Interior)
+- File: Djamaa Zitouna 26.jpg
+- Source page: https://commons.wikimedia.org/wiki/File:Djamaa_Zitouna_26.jpg
+- Direct URL: https://upload.wikimedia.org/wikipedia/commons/a/a5/Djamaa_Zitouna_26.jpg
+- Local file: `frontend/public/images/zitouna-mosque-interior.jpg`
+- License: CC BY-SA 4.0 (https://creativecommons.org/licenses/by-sa/4.0)
+- Author: Noomen9 (https://commons.wikimedia.org/wiki/User:Noomen9)
+- Attribution: "Noomen9, CC BY-SA 4.0, via Wikimedia Commons"
 
 ## Hagia Sophia (Istanbul)
 - File: Hagia Sophia Istanbul July 2022-2.jpg

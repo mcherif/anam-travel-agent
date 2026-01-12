@@ -358,6 +358,8 @@ const TravelAgentDemo = () => {
   const [manualMessage, setManualMessage] = useState(
     `Tell me about ${getCityData(initialCityId).city.name}`
   );
+  const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
+  const [selectedVideoDeviceId, setSelectedVideoDeviceId] = useState('default');
   const [manualError, setManualError] = useState<string | null>(null);
   const [startupError, setStartupError] = useState<string | null>(null);
   const [debugZoom, setDebugZoom] = useState(18.5);
@@ -367,6 +369,10 @@ const TravelAgentDemo = () => {
     'idle' | 'loading' | 'ready' | 'unavailable' | 'error'
   >('idle');
   const [userVideoActive, setUserVideoActive] = useState(false);
+  const [cameraStatus, setCameraStatus] = useState<'idle' | 'starting' | 'active' | 'error'>('idle');
+  const [cameraError, setCameraError] = useState<string | null>(null);
+  const [cameraPanelCollapsed, setCameraPanelCollapsed] = useState(true);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
   const debugZoomRef = useRef(debugZoom);
   const applyDebugZoomRef = useRef(applyDebugZoom);
   const toolCallsSeenRef = useRef(false);
@@ -381,6 +387,7 @@ const TravelAgentDemo = () => {
   const [showInterrupted, setShowInterrupted] = useState(false);
 
   const [debugVisible, setDebugVisible] = useState(false);
+  const [manualControlsVisible, setManualControlsVisible] = useState(true);
   const initialMetrics: DebugMetrics = {
     lastEvent: null,
     toolCallQueue: [],
@@ -398,6 +405,12 @@ const TravelAgentDemo = () => {
   const userVideoStreamRef = useRef<MediaStream | null>(null);
 
   const [currentLandmark, setCurrentLandmark] = useState<Landmark | null>(null);
+  const landmarkImages = currentLandmark
+    ? currentLandmark.imageUrls && currentLandmark.imageUrls.length > 0
+      ? currentLandmark.imageUrls
+      : [currentLandmark.imageUrl]
+    : [];
+  const activeLandmarkImage = landmarkImages[activeImageIndex] ?? currentLandmark?.imageUrl;
 
   const updateDebugMetrics = (updates: Partial<DebugMetrics>) => {
     setDebugMetrics((prev) => {
@@ -445,16 +458,130 @@ const TravelAgentDemo = () => {
     recentToolCallsRef.current = [];
   }, [selectedCity]);
 
-  const stopUserVideo = () => {
+  const refreshVideoDevices = async () => {
+    if (!navigator.mediaDevices?.enumerateDevices) {
+      return;
+    }
+
+    try {
+      const list = await navigator.mediaDevices.enumerateDevices();
+      setVideoDevices(list.filter((device) => device.kind === 'videoinput'));
+    } catch (error) {
+      console.warn('Failed to enumerate video devices:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (!currentLandmark || landmarkImages.length <= 1) {
+      setActiveImageIndex(0);
+      return;
+    }
+
+    setActiveImageIndex(0);
+    const interval = window.setInterval(() => {
+      setActiveImageIndex((prev) => (prev + 1) % landmarkImages.length);
+    }, 4000);
+
+    return () => window.clearInterval(interval);
+  }, [currentLandmark, landmarkImages.length]);
+
+  const stopUserVideoTracks = () => {
     if (userVideoStreamRef.current) {
       userVideoStreamRef.current.getTracks().forEach((track) => track.stop());
       userVideoStreamRef.current = null;
     }
+  };
+
+  const stopUserVideo = () => {
+    stopUserVideoTracks();
     setUserVideoActive(false);
+    setCameraStatus('idle');
+    setCameraError(null);
     if (userVideoRef.current) {
       userVideoRef.current.srcObject = null;
     }
   };
+
+  const startUserVideo = async () => {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setCameraStatus('error');
+      setCameraError('Camera capture is not supported in this browser.');
+      return false;
+    }
+
+    setCameraStatus('starting');
+    setCameraError(null);
+    stopUserVideoTracks();
+
+    const hasSelectedDevice = selectedVideoDeviceId && selectedVideoDeviceId !== 'default';
+    const constraints: MediaTrackConstraints | boolean = hasSelectedDevice
+      ? { deviceId: { exact: selectedVideoDeviceId } }
+      : true;
+
+    try {
+      const videoStream = await navigator.mediaDevices.getUserMedia({ video: constraints });
+      userVideoStreamRef.current = videoStream;
+      if (userVideoRef.current) {
+        userVideoRef.current.srcObject = videoStream;
+      }
+      setUserVideoActive(true);
+      setCameraStatus('active');
+      await refreshVideoDevices();
+      return true;
+    } catch (error) {
+      if (hasSelectedDevice) {
+        try {
+          const fallbackStream = await navigator.mediaDevices.getUserMedia({ video: true });
+          userVideoStreamRef.current = fallbackStream;
+          if (userVideoRef.current) {
+            userVideoRef.current.srcObject = fallbackStream;
+          }
+          setUserVideoActive(true);
+          setCameraStatus('active');
+          await refreshVideoDevices();
+          return true;
+        } catch (fallbackError) {
+          const message =
+            fallbackError instanceof Error ? fallbackError.message : 'Camera access failed.';
+          setCameraStatus('error');
+          setCameraError(message);
+          setUserVideoActive(false);
+          return false;
+        }
+      }
+
+      const message = error instanceof Error ? error.message : 'Camera access failed.';
+      setCameraStatus('error');
+      setCameraError(message);
+      setUserVideoActive(false);
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    refreshVideoDevices();
+
+    const handler = () => refreshVideoDevices();
+    const mediaDevices = navigator.mediaDevices;
+    if (mediaDevices?.addEventListener) {
+      mediaDevices.addEventListener('devicechange', handler);
+      return () => mediaDevices.removeEventListener('devicechange', handler);
+    }
+
+    return () => undefined;
+  }, []);
+
+  useEffect(() => {
+    if (!userVideoActive || !userVideoStreamRef.current || !userVideoRef.current) {
+      return;
+    }
+
+    userVideoRef.current.srcObject = userVideoStreamRef.current;
+    const playPromise = userVideoRef.current.play();
+    if (playPromise && typeof playPromise.catch === 'function') {
+      playPromise.catch(() => undefined);
+    }
+  }, [userVideoActive]);
 
   const switchCity = (nextCity: CityId, options?: { skipFly?: boolean }) => {
     if (nextCity === selectedCityRef.current) {
@@ -1100,20 +1227,7 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
         setMicStatus('denied');
       }
 
-      stopUserVideo();
-      try {
-        const videoStream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user' }
-        });
-        userVideoStreamRef.current = videoStream;
-        if (userVideoRef.current) {
-          userVideoRef.current.srcObject = videoStream;
-        }
-        setUserVideoActive(true);
-      } catch (error) {
-        console.warn('Camera access failed, continuing without video.', error);
-        setUserVideoActive(false);
-      }
+      await startUserVideo();
 
       await anamClient.streamToVideoElement('anam-video', userAudioStream);
     } catch (error) {
@@ -1232,6 +1346,10 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
     updateDebugMetrics({ personaState: 'speaking' });
   };
 
+  const handleRestartCamera = async () => {
+    await startUserVideo();
+  };
+
   useEffect(() => {
     if (DEMO_MODE) {
       return;
@@ -1240,6 +1358,9 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
     const handleKeyPress = (event: KeyboardEvent) => {
       if (event.ctrlKey && event.shiftKey && event.key === 'D') {
         setDebugVisible((prev) => !prev);
+      }
+      if (event.ctrlKey && event.shiftKey && event.key === 'M') {
+        setManualControlsVisible((prev) => !prev);
       }
     };
 
@@ -1263,6 +1384,55 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
           </div>
         )}
 
+        {isConnected && (
+          <div className={`camera-panel ${cameraPanelCollapsed ? 'camera-panel-collapsed' : ''}`}>
+            <div className="camera-panel-header">
+              <span className="camera-panel-title">Camera</span>
+              <button
+                className="camera-toggle"
+                onClick={() => setCameraPanelCollapsed((prev) => !prev)}
+                aria-label={cameraPanelCollapsed ? 'Expand camera panel' : 'Collapse camera panel'}
+              >
+                {cameraPanelCollapsed ? '+' : '–'}
+              </button>
+            </div>
+            {!cameraPanelCollapsed && (
+              <>
+                <label className="city-picker-label" htmlFor="camera-picker-overlay">
+                  Device
+                </label>
+                <select
+                  id="camera-picker-overlay"
+                  className="city-picker-select"
+                  value={selectedVideoDeviceId}
+                  onChange={(event) => setSelectedVideoDeviceId(event.target.value)}
+                >
+                  <option value="default">Default camera</option>
+                  {videoDevices.map((device) => (
+                    <option key={device.deviceId} value={device.deviceId}>
+                      {device.label || `Camera ${device.deviceId.slice(0, 6)}`}
+                    </option>
+                  ))}
+                </select>
+                <div className="camera-panel-actions">
+                  <button
+                    className="camera-button"
+                    onClick={handleRestartCamera}
+                    disabled={cameraStatus === 'starting'}
+                  >
+                    {cameraStatus === 'starting' ? 'Starting...' : 'Restart camera'}
+                  </button>
+                  <button className="camera-button camera-button-secondary" onClick={refreshVideoDevices}>
+                    Refresh
+                  </button>
+                </div>
+                {cameraError && <div className="camera-error">{cameraError}</div>}
+              </>
+            )}
+            <div className={`camera-status camera-status-${cameraStatus}`}>Camera: {cameraStatus}</div>
+          </div>
+        )}
+
         {!isConnected && (
           <div className="start-panel">
             <div className="city-picker">
@@ -1278,6 +1448,22 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
               {cityOptions.map((city) => (
                 <option key={city.id} value={city.id}>
                   {city.name}
+                </option>
+              ))}
+            </select>
+            <label className="city-picker-label" htmlFor="camera-picker-start">
+              Camera
+            </label>
+            <select
+              id="camera-picker-start"
+              className="city-picker-select"
+              value={selectedVideoDeviceId}
+              onChange={(event) => setSelectedVideoDeviceId(event.target.value)}
+            >
+              <option value="default">Default camera</option>
+              {videoDevices.map((device) => (
+                <option key={device.deviceId} value={device.deviceId}>
+                  {device.label || `Camera ${device.deviceId.slice(0, 6)}`}
                 </option>
               ))}
             </select>
@@ -1330,11 +1516,18 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
               exit={{ x: 300, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             >
-              <img
-                src={currentLandmark.imageUrl}
-                alt={currentLandmark.name}
-                className="landmark-image"
-              />
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={activeLandmarkImage || currentLandmark.imageUrl}
+                  src={activeLandmarkImage || currentLandmark.imageUrl}
+                  alt={currentLandmark.name}
+                  className="landmark-image"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.4 }}
+                />
+              </AnimatePresence>
               <h2>{currentLandmark.name}</h2>
               <p className="landmark-type">{currentLandmark.type}</p>
               <p className="landmark-description">{currentLandmark.description}</p>
@@ -1361,29 +1554,21 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
                 </div>
               )}
 
-              <div className="street-view-panel">
-                <h3>Street View</h3>
-                {streetViewStatus === 'ready' && streetViewUrl && (
-                  <img
-                    src={streetViewUrl}
-                    alt={`Street view near ${currentLandmark.name}`}
-                    className="street-view-image"
-                  />
-                )}
-                {streetViewStatus === 'loading' && (
-                  <p className="street-view-status">Loading street imagery...</p>
-                )}
-                {streetViewStatus === 'unavailable' && (
-                  <p className="street-view-status">
-                    {MAPILLARY_TOKEN
-                      ? 'No street imagery found nearby.'
-                      : 'Set VITE_MAPILLARY_TOKEN to show street imagery.'}
-                  </p>
-                )}
-                {streetViewStatus === 'error' && (
-                  <p className="street-view-status">Street imagery failed to load.</p>
-                )}
-              </div>
+              {(streetViewStatus === 'ready' || streetViewStatus === 'loading') && (
+                <div className="street-view-panel">
+                  <h3>Street View</h3>
+                  {streetViewStatus === 'ready' && streetViewUrl && (
+                    <img
+                      src={streetViewUrl}
+                      alt={`Street view near ${currentLandmark.name}`}
+                      className="street-view-image"
+                    />
+                  )}
+                  {streetViewStatus === 'loading' && (
+                    <p className="street-view-status">Loading street imagery...</p>
+                  )}
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -1420,11 +1605,11 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
 
       {!DEMO_MODE && (
         <div className="debug-hint">
-          Press <kbd>Ctrl+Shift+D</kbd> for Debug HUD
+          Press <kbd>Ctrl+Shift+D</kbd> for Debug HUD · <kbd>Ctrl+Shift+M</kbd> to toggle controls
         </div>
       )}
 
-      {!DEMO_MODE && (
+      {!DEMO_MODE && manualControlsVisible && (
         <div className="manual-controls">
           <div className="manual-row">
             <span className={`manual-status manual-status-${micStatus}`}>

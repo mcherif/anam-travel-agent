@@ -20,8 +20,38 @@
           "Zitouna Mosque - spiritual heart of the medina",
           "Traditional souks and markets"
         ],
-        "imageUrl": "/images/medina-tunis.jpg",
+        "imageUrl": "/images/medina-tunis-souk-attarine.jpg",
+        "imageUrls": [
+          "/images/medina-tunis-souk-attarine.jpg",
+          "/images/medina-tunis.jpg",
+          "/images/medina-tunis-street-1.jpg",
+          "/images/medina-tunis-street-3.jpg",
+          "/images/medina-tunis-door-1.jpg",
+          "/images/medina-tunis-door-2.jpg",
+          "/images/medina-tunis-souk-3.jpg",
+          "/images/medina-tunis-souk-chawachine-day.jpg"
+        ],
         "zoom": 18
+      },
+      {
+        "id": "zitouna-mosque",
+        "name": "Zitouna Mosque",
+        "coordinates": [10.171111, 36.797222],
+        "type": "mosque",
+        "keywords": ["zitouna", "zaytuna", "zaitouna", "mosque", "great mosque"],
+        "description": "Historic mosque at the heart of the medina, renowned for its ancient minaret and scholarly legacy.",
+        "foundedYear": "732 CE",
+        "highlights": [
+          "One of the oldest mosques in North Africa",
+          "Traditional courtyard and prayer hall",
+          "Center of learning for centuries"
+        ],
+        "imageUrl": "/images/zitouna-mosque.jpg",
+        "imageUrls": [
+          "/images/zitouna-mosque.jpg",
+          "/images/zitouna-mosque-interior.jpg"
+        ],
+        "zoom": 18.5
       },
       {
         "id": "carthage",
@@ -58,7 +88,7 @@
       {
         "id": "sidi-bou-said",
         "name": "Sidi Bou Said",
-        "coordinates": [10.333333, 36.866667],
+        "coordinates": [10.341014, 36.869758],
         "type": "village",
         "keywords": ["sidi bou said", "blue and white", "cliff", "village"],
         "description": "Picturesque cliff-side village famous for its blue and white architecture",
@@ -69,6 +99,13 @@
           "Artists and galleries tucked into alleys"
         ],
         "imageUrl": "/images/sidi-bou-said.jpg",
+        "imageUrls": [
+          "/images/sidi-bou-said.jpg",
+          "/images/sidi-bou-said-street.jpg",
+          "/images/sidi-bou-said-ennejma-ezzahra.jpg",
+          "/images/sidi-bou-said-ennejma-ezzahra-interior.jpg",
+          "/images/sidi-bou-said-hill-view-2.jpg"
+        ],
         "zoom": 18
       }
     ]
