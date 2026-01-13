@@ -170,6 +170,20 @@ The orchestrator performs the actual UI choreography.
 await orchestrator.handleToolCall('fly_to_landmark', { id: 'medina', zoom: 15 });
 ```
 
+### 4. Photo Sync (Local + Live)
+
+Landmark photos update when `show_landmark_panel` is called. The panel rotates through:
+- Local images from `frontend/src/data/landmarks_db.json`
+- Optional live images fetched from the backend `/api/photos` endpoint
+
+When live photos are enabled (`VITE_LIVE_PHOTOS=true`), the frontend queries the backend with
+`{landmark name} + {city name}` and merges those results ahead of the local rotation. If the
+live fetch fails or returns no results, the UI automatically falls back to local assets.
+
+Live photo providers are configured via:
+- Backend: `PHOTO_PROVIDER=auto|openverse|pexels`
+- Frontend: `VITE_PHOTO_PROVIDER=auto|openverse|pexels`
+
 ## Customization
 
 ### Adding New Locations

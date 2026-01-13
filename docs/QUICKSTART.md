@@ -74,6 +74,11 @@ Set `VITE_MAPILLARY_TOKEN` to enable street-level imagery (Mapillary).
 Set `VITE_LIVE_PHOTOS=true` to enable live Openverse/Pexels photos.
 Set `PHOTO_PROVIDER=auto|openverse|pexels` (backend) and `VITE_PHOTO_PROVIDER` to the same value.
 
+Live photo sync notes:
+- The frontend queries the backend `/api/photos` endpoint with `{landmark name} + {city}`.
+- Results are merged ahead of local assets for rotation; local images are the fallback.
+- Openverse needs no API key. Pexels requires `PEXELS_API_KEY`.
+
 Start the dev server:
 
 ```bash
