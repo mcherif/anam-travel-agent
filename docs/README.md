@@ -98,6 +98,9 @@ PORT=3001
 CORS_ORIGINS=http://localhost:3000
 OPENVERSE_API_URL=https://api.openverse.org/v1/images
 OPENVERSE_LICENSE_TYPE=all
+PEXELS_API_KEY=
+PEXELS_API_URL=https://api.pexels.com/v1/search
+PHOTO_PROVIDER=auto
 
 # Frontend
 VITE_MAPBOX_TOKEN=your_mapbox_token_here
@@ -107,11 +110,13 @@ VITE_DEMO_MODE=true
 VITE_TOOL_FALLBACK=false
 VITE_MAPILLARY_TOKEN=
 VITE_LIVE_PHOTOS=false
+VITE_PHOTO_PROVIDER=auto
 ```
 
 Set `VITE_CITY` to `tunis` or `istanbul` to choose the default city.
 Set `VITE_MAPILLARY_TOKEN` to enable street-level imagery (Mapillary).
-Set `VITE_LIVE_PHOTOS=true` to fetch live photos from Openverse (no API key required).
+Set `VITE_LIVE_PHOTOS=true` to fetch live photos from Openverse/Pexels.
+Set `PHOTO_PROVIDER=auto|openverse|pexels` (backend) and `VITE_PHOTO_PROVIDER` to the same value.
 
 ## Usage
 

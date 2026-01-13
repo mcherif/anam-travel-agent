@@ -57,6 +57,7 @@ const DEMO_MODE = import.meta.env.VITE_DEMO_MODE !== 'false';
 const MIC_TEST_MODE = import.meta.env.VITE_MIC_TEST === 'true';
 const TOOL_FALLBACK_MODE = import.meta.env.VITE_TOOL_FALLBACK === 'true';
 const LIVE_PHOTOS = import.meta.env.VITE_LIVE_PHOTOS === 'true';
+const PHOTO_PROVIDER = import.meta.env.VITE_PHOTO_PROVIDER as string | undefined;
 
 if (MAPBOX_TOKEN) {
   mapboxgl.accessToken = MAPBOX_TOKEN;
@@ -791,8 +792,9 @@ const TravelAgentDemo = () => {
       setLivePhotoError(null);
 
       try {
+        const providerParam = PHOTO_PROVIDER ? `&provider=${encodeURIComponent(PHOTO_PROVIDER)}` : '';
         const response = await fetch(
-          `${BACKEND_URL}/api/photos?q=${encodeURIComponent(query)}&perPage=6`,
+          `${BACKEND_URL}/api/photos?q=${encodeURIComponent(query)}&perPage=6${providerParam}`,
           { signal: controller.signal }
         );
         const data = (await response.json()) as {
