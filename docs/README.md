@@ -138,6 +138,7 @@ Set `VIDEO_PROVIDER=pexels` (backend) and `VITE_VIDEO_PROVIDER=pexels` to enable
 4. Click "Start Your Journey"
 5. Ask Sofia about the city: "Tell me about Tunis"
 6. Watch as landmarks are highlighted in sync with her speech
+7. To open the media overlay, ask for photos or video (e.g., "Show me a video of the Medina"), or use the debug buttons when `VITE_DEMO_MODE=false`.
 
 ### Example Queries
 
