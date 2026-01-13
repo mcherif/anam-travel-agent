@@ -37,7 +37,9 @@ OPENVERSE_API_URL=https://api.openverse.org/v1/images
 OPENVERSE_LICENSE_TYPE=all
 PEXELS_API_KEY=
 PEXELS_API_URL=https://api.pexels.com/v1/search
+PEXELS_VIDEO_API_URL=https://api.pexels.com/videos/search
 PHOTO_PROVIDER=auto
+VIDEO_PROVIDER=pexels
 ```
 
 Start the server:
@@ -67,17 +69,24 @@ VITE_TOOL_FALLBACK=false
 VITE_MAPILLARY_TOKEN=
 VITE_LIVE_PHOTOS=false
 VITE_PHOTO_PROVIDER=auto
+VITE_VIDEO_PROVIDER=pexels
 ```
 
 Set `VITE_CITY` to `tunis` or `istanbul` to choose the default city.
 Set `VITE_MAPILLARY_TOKEN` to enable street-level imagery (Mapillary).
 Set `VITE_LIVE_PHOTOS=true` to enable live Openverse/Pexels photos.
 Set `PHOTO_PROVIDER=auto|openverse|pexels` (backend) and `VITE_PHOTO_PROVIDER` to the same value.
+Set `VIDEO_PROVIDER=pexels` (backend) and `VITE_VIDEO_PROVIDER=pexels` to enable live video search.
 
 Live photo sync notes:
 - The frontend queries the backend `/api/photos` endpoint with `{landmark name} + {city}`.
 - Results are merged ahead of local assets for rotation; local images are the fallback.
 - Openverse needs no API key. Pexels requires `PEXELS_API_KEY`.
+
+Live video sync notes:
+- The frontend queries `/api/videos` with `{landmark name} + {city} + {country}` when `show_media` is called.
+- If no videos are found, the media overlay falls back to photos.
+- Pexels videos require `PEXELS_API_KEY`.
 
 Start the dev server:
 

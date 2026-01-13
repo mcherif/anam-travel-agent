@@ -108,7 +108,9 @@ OPENVERSE_API_URL=https://api.openverse.org/v1/images
 OPENVERSE_LICENSE_TYPE=all
 PEXELS_API_KEY=
 PEXELS_API_URL=https://api.pexels.com/v1/search
+PEXELS_VIDEO_API_URL=https://api.pexels.com/videos/search
 PHOTO_PROVIDER=auto
+VIDEO_PROVIDER=pexels
 
 # Frontend
 VITE_MAPBOX_TOKEN=your_mapbox_token_here
@@ -119,12 +121,14 @@ VITE_TOOL_FALLBACK=false
 VITE_MAPILLARY_TOKEN=
 VITE_LIVE_PHOTOS=false
 VITE_PHOTO_PROVIDER=auto
+VITE_VIDEO_PROVIDER=pexels
 ```
 
 Set `VITE_CITY` to `tunis` or `istanbul` to choose the default city.
 Set `VITE_MAPILLARY_TOKEN` to enable street-level imagery (Mapillary).
 Set `VITE_LIVE_PHOTOS=true` to fetch live photos from Openverse/Pexels.
 Set `PHOTO_PROVIDER=auto|openverse|pexels` (backend) and `VITE_PHOTO_PROVIDER` to the same value.
+Set `VIDEO_PROVIDER=pexels` (backend) and `VITE_VIDEO_PROVIDER=pexels` to enable live video search.
 
 ## Usage
 
@@ -147,7 +151,7 @@ Set `PHOTO_PROVIDER=auto|openverse|pexels` (backend) and `VITE_PHOTO_PROVIDER` t
 
 ### 1. Tool Calls Drive the UI
 
-The persona is configured with Client Tools. When Sofia decides to highlight a landmark, she calls a tool like `fly_to_landmark` or `show_landmark_panel`.
+The persona is configured with Client Tools. When Sofia decides to highlight a landmark, she calls a tool like `fly_to_landmark`, `show_landmark_panel`, or `show_media`.
 
 ```javascript
 client.addListener(AnamEvent.CLIENT_TOOL_EVENT_RECEIVED, (event) => {
@@ -178,7 +182,7 @@ The orchestrator performs the actual UI choreography.
 await orchestrator.handleToolCall('fly_to_landmark', { id: 'medina', zoom: 15 });
 ```
 
-### 4. Photo Sync (Local + Live)
+### 4. Media Sync (Photos + Video)
 
 Landmark photos update when `show_landmark_panel` is called. The panel rotates through:
 - Local images from `frontend/src/data/landmarks_db.json`
@@ -191,6 +195,14 @@ live fetch fails or returns no results, the UI automatically falls back to local
 Live photo providers are configured via:
 - Backend: `PHOTO_PROVIDER=auto|openverse|pexels`
 - Frontend: `VITE_PHOTO_PROVIDER=auto|openverse|pexels`
+
+The `show_media({ id, kind })` tool opens a full-screen overlay with Photos/Video tabs.
+Video search is handled by `/api/videos` (Pexels) using `{landmark name} + {city} + {country}`
+and falls back to photos if no videos are found.
+
+Live video providers are configured via:
+- Backend: `VIDEO_PROVIDER=pexels`
+- Frontend: `VITE_VIDEO_PROVIDER=pexels`
 
 ## Customization
 
@@ -311,5 +323,5 @@ MIT License - Feel free to use and modify
 - Mapbox for mapping platform
 - OpenStreetMap for geographic data
 - Openverse for live photo search
-- Pexels for live photo search
+- Pexels for live photo and video search
 - Landmark photos and attribution details in `docs/ASSETS.md`
