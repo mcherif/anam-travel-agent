@@ -96,8 +96,8 @@ Create a `.env` file:
 ANAM_API_KEY=your_anam_api_key_here
 PORT=3001
 CORS_ORIGINS=http://localhost:3000
-FLICKR_API_KEY=
-FLICKR_LICENSES=4,5,9,10
+OPENVERSE_API_URL=https://api.openverse.org/v1/images
+OPENVERSE_LICENSE_TYPE=all
 
 # Frontend
 VITE_MAPBOX_TOKEN=your_mapbox_token_here
@@ -111,7 +111,7 @@ VITE_LIVE_PHOTOS=false
 
 Set `VITE_CITY` to `tunis` or `istanbul` to choose the default city.
 Set `VITE_MAPILLARY_TOKEN` to enable street-level imagery (Mapillary).
-Set `VITE_LIVE_PHOTOS=true` and `FLICKR_API_KEY` to fetch live photos from Flickr.
+Set `VITE_LIVE_PHOTOS=true` to fetch live photos from Openverse (no API key required).
 
 ## Usage
 

@@ -31,41 +31,8 @@ const getFetch = () => {
   return (...args) => import('node-fetch').then(({ default: fetchFn }) => fetchFn(...args));
 };
 
-const DEFAULT_FLICKR_LICENSES = ['4', '5', '9', '10'];
-const FLICKR_LICENSE_INFO = {
-  1: {
-    name: 'CC BY-NC-SA 2.0',
-    url: 'https://creativecommons.org/licenses/by-nc-sa/2.0/'
-  },
-  2: {
-    name: 'CC BY-NC 2.0',
-    url: 'https://creativecommons.org/licenses/by-nc/2.0/'
-  },
-  3: {
-    name: 'CC BY-NC-ND 2.0',
-    url: 'https://creativecommons.org/licenses/by-nc-nd/2.0/'
-  },
-  4: {
-    name: 'CC BY 2.0',
-    url: 'https://creativecommons.org/licenses/by/2.0/'
-  },
-  5: {
-    name: 'CC BY-SA 2.0',
-    url: 'https://creativecommons.org/licenses/by-sa/2.0/'
-  },
-  6: {
-    name: 'CC BY-ND 2.0',
-    url: 'https://creativecommons.org/licenses/by-nd/2.0/'
-  },
-  9: {
-    name: 'Public Domain Dedication (CC0)',
-    url: 'https://creativecommons.org/publicdomain/zero/1.0/'
-  },
-  10: {
-    name: 'Public Domain Mark',
-    url: 'https://creativecommons.org/publicdomain/mark/1.0/'
-  }
-};
+const OPENVERSE_API_URL = process.env.OPENVERSE_API_URL || 'https://api.openverse.org/v1/images';
+const OPENVERSE_LICENSE_TYPE = process.env.OPENVERSE_LICENSE_TYPE || 'all';
 const PHOTO_CACHE_TTL_MS = 1000 * 60 * 10;
 const photoCache = new Map();
 
@@ -116,12 +83,6 @@ app.get('/api/photos', async (req, res) => {
       return;
     }
 
-    const apiKey = process.env.FLICKR_API_KEY;
-    if (!apiKey) {
-      res.status(500).json({ error: 'Missing FLICKR_API_KEY' });
-      return;
-    }
-
     const perPageRaw = Number(req.query.perPage || req.query.per_page || 8);
     const perPage = Number.isFinite(perPageRaw) ? Math.min(Math.max(perPageRaw, 1), 12) : 8;
     const cacheKey = `${query.toLowerCase()}|${perPage}`;
@@ -131,49 +92,40 @@ app.get('/api/photos', async (req, res) => {
       return;
     }
 
-    const licenseParam = (process.env.FLICKR_LICENSES || DEFAULT_FLICKR_LICENSES.join(','))
-      .split(',')
-      .map((value) => value.trim())
-      .filter(Boolean)
-      .join(',');
-
     const params = new URLSearchParams({
-      method: 'flickr.photos.search',
-      api_key: apiKey,
-      text: query,
-      sort: 'relevance',
-      safe_search: '1',
-      content_type: '1',
-      media: 'photos',
-      per_page: String(perPage),
-      format: 'json',
-      nojsoncallback: '1',
-      license: licenseParam,
-      extras: ['url_l', 'url_c', 'url_m', 'owner_name', 'license'].join(',')
+      q: query,
+      page_size: String(perPage),
+      license_type: OPENVERSE_LICENSE_TYPE
     });
 
-    const response = await getFetch()(`https://www.flickr.com/services/rest/?${params.toString()}`);
+    const response = await getFetch()(`${OPENVERSE_API_URL}?${params.toString()}`, {
+      headers: { 'User-Agent': 'anam-travel-agent/1.0' }
+    });
     const data = await response.json();
-    if (!response.ok || data.stat !== 'ok') {
-      res.status(502).json({ error: 'Failed to fetch Flickr photos', details: data });
+    if (!response.ok) {
+      res.status(502).json({ error: 'Failed to fetch Openverse photos', details: data });
       return;
     }
 
-    const photos = (data.photos?.photo || [])
+    const results = Array.isArray(data.results) ? data.results : [];
+    const photos = results
       .map((photo) => {
-        const imageUrl = photo.url_l || photo.url_c || photo.url_m;
+        const imageUrl = photo.url || photo.thumbnail;
         if (!imageUrl) {
           return null;
         }
-        const licenseInfo = FLICKR_LICENSE_INFO[Number(photo.license)];
+        const licenseLabel = photo.license
+          ? `${String(photo.license).toUpperCase()}${photo.license_version ? ` ${photo.license_version}` : ''}`
+          : '';
         return {
           id: photo.id,
           title: photo.title,
-          ownerName: photo.ownername,
-          pageUrl: `https://www.flickr.com/photos/${photo.owner}/${photo.id}`,
+          ownerName: photo.creator || '',
+          pageUrl: photo.foreign_landing_url || photo.url || '',
           imageUrl,
-          license: licenseInfo?.name || `License ${photo.license || ''}`.trim(),
-          licenseUrl: licenseInfo?.url || ''
+          license: licenseLabel,
+          licenseUrl: photo.license_url || '',
+          provider: photo.provider || 'Openverse'
         };
       })
       .filter(Boolean);

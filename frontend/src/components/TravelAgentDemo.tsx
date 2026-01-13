@@ -24,9 +24,10 @@ type ToolCallEntry = {
 
 type ImageItem = {
   url: string;
-  source: 'local' | 'flickr';
+  source: 'local' | 'openverse';
   title?: string;
   author?: string;
+  provider?: string;
   pageUrl?: string;
   license?: string;
   licenseUrl?: string;
@@ -802,6 +803,7 @@ const TravelAgentDemo = () => {
             pageUrl?: string;
             license?: string;
             licenseUrl?: string;
+            provider?: string;
           }>;
         };
         if (!isActive) {
@@ -816,9 +818,10 @@ const TravelAgentDemo = () => {
             ?.filter((photo) => typeof photo.imageUrl === 'string')
             .map((photo) => ({
               url: photo.imageUrl as string,
-              source: 'flickr' as const,
+              source: 'openverse' as const,
               title: photo.title,
               author: photo.ownerName,
+              provider: photo.provider,
               pageUrl: photo.pageUrl,
               license: photo.license,
               licenseUrl: photo.licenseUrl
@@ -1639,13 +1642,14 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
               {LIVE_PHOTOS && livePhotoStatus === 'loading' && (
                 <div className="landmark-photo-status">Loading live photos...</div>
               )}
-              {activeLandmarkImage?.source === 'flickr' && activeLandmarkImage.pageUrl && (
+              {activeLandmarkImage?.source === 'openverse' && activeLandmarkImage.pageUrl && (
                 <div className="landmark-photo-credit">
                   Photo:{' '}
                   <a href={activeLandmarkImage.pageUrl} target="_blank" rel="noreferrer">
-                    {activeLandmarkImage.title || 'Flickr'}
+                    {activeLandmarkImage.title || 'Openverse'}
                   </a>
                   {activeLandmarkImage.author && ` by ${activeLandmarkImage.author}`}
+                  {activeLandmarkImage.provider && ` · ${activeLandmarkImage.provider}`}
                   {activeLandmarkImage.license &&
                     ` (${activeLandmarkImage.license})`}
                 </div>
