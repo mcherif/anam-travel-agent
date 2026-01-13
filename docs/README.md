@@ -4,6 +4,12 @@
 
 This demo showcases sophisticated UI synchronization with Anam's AI personas. As the travel agent persona (Sofia) describes landmarks in Tunis, the map automatically zooms, highlights, and displays information about each location in real time, synchronized with her speech.
 
+## Preview
+
+<img src="Anam-travel-assistant-snapshot.png" alt="Anam travel assistant preview" width="720">
+
+<video src="Anam-travel-assistant.mp4" controls width="720"></video>
+
 ## Key Features
 
 ### 1. Speech-Synchronized Map Highlighting
@@ -282,6 +288,7 @@ Modify the system prompt in `frontend/src/components/TravelAgentDemo.tsx` and ad
 6. Photo gallery expansions
 7. User reviews and ratings
 8. Booking integrations
+9. Dynamic landmark discovery (e.g., Wikidata/OSM search + tool schema refresh)
 
 ### Advanced Features
 
@@ -301,4 +308,6 @@ MIT License - Feel free to use and modify
 - Anam AI for persona technology
 - Mapbox for mapping platform
 - OpenStreetMap for geographic data
+- Openverse for live photo search
+- Pexels for live photo search
 - Landmark photos and attribution details in `docs/ASSETS.md`
