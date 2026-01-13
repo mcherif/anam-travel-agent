@@ -15,6 +15,9 @@
         "keywords": ["medina", "old city", "unesco", "world heritage"],
         "description": "UNESCO World Heritage site, one of the best preserved Islamic cities in the Arab world",
         "foundedYear": "698 CE",
+        "videoQuery": "Medina of Tunis souk old city Tunisia",
+        "videoInclude": ["medina", "tunis"],
+        "videoExclude": ["surf", "surfing", "wave", "waves", "ocean", "sea", "sidi", "bou", "said", "sidi-bou-said"],
         "highlights": [
           "700 monuments including palaces, mosques, and fountains",
           "Zitouna Mosque - spiritual heart of the medina",
@@ -93,6 +96,7 @@
         "keywords": ["sidi bou said", "blue and white", "cliff", "village", "marina", "port"],
         "description": "Picturesque cliff-side village with a Mediterranean marina and blue-and-white architecture",
         "foundedYear": "12th century",
+        "videoQuery": "Sidi Bou Said village Tunisia",
         "highlights": [
           "Iconic blue doors and white walls",
           "Marina promenade and Mediterranean views",

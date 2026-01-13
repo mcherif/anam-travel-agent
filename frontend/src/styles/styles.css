@@ -529,6 +529,128 @@
   color: #6b7280;
 }
 
+.media-overlay {
+  position: fixed;
+  inset: 0;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1900;
+}
+
+.media-card {
+  width: min(900px, 92vw);
+  max-height: 90vh;
+  background: #0f172a;
+  color: #f8fafc;
+  border-radius: 18px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.media-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.media-tabs {
+  display: flex;
+  gap: 8px;
+  padding: 12px 20px 0;
+}
+
+.media-tab {
+  border: 1px solid #334155;
+  background: #1e293b;
+  color: #e2e8f0;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.media-tab-active {
+  background: #38bdf8;
+  color: #0f172a;
+  border-color: #38bdf8;
+}
+
+.media-notice {
+  padding: 8px 20px 0;
+  font-size: 12px;
+  color: #cbd5f5;
+}
+
+.media-title {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.media-close {
+  border: none;
+  background: transparent;
+  color: #f8fafc;
+  font-size: 20px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.media-body {
+  padding: 16px 20px 0;
+}
+
+.media-image,
+.media-video {
+  width: 100%;
+  max-height: 60vh;
+  object-fit: cover;
+  border-radius: 14px;
+  background: #0b1220;
+  display: block;
+}
+
+.media-status {
+  margin: 0 0 12px;
+  font-size: 13px;
+  color: #cbd5f5;
+}
+
+.media-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px 20px 20px;
+}
+
+.media-button {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: 1px solid #334155;
+  background: #1e293b;
+  color: #f8fafc;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.media-button:hover {
+  background: #334155;
+}
+
+.media-counter {
+  font-size: 13px;
+  color: #cbd5f5;
+}
+
 /* Interrupted Overlay */
 .interrupted-overlay {
   position: fixed;

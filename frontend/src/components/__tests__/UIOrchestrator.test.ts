@@ -60,6 +60,7 @@ describe('UIOrchestrator', () => {
     const map = createMapMock();
     const setCurrentLandmark = vi.fn();
     const setUIState = vi.fn();
+    const showMediaOverlay = vi.fn();
     const setShowInterrupted = vi.fn();
     const updateMetrics = vi.fn();
     const landmarks = getLandmarksByCity('tunis');
@@ -69,6 +70,7 @@ describe('UIOrchestrator', () => {
       landmarks,
       setCurrentLandmark,
       setUIState,
+      showMediaOverlay,
       setShowInterrupted,
       updateMetrics
     );
@@ -84,6 +86,7 @@ describe('UIOrchestrator', () => {
     const map = createMapMock();
     const setCurrentLandmark = vi.fn();
     const setUIState = vi.fn();
+    const showMediaOverlay = vi.fn();
     const setShowInterrupted = vi.fn();
     const updateMetrics = vi.fn();
     const landmarks = getLandmarksByCity('tunis');
@@ -93,6 +96,7 @@ describe('UIOrchestrator', () => {
       landmarks,
       setCurrentLandmark,
       setUIState,
+      showMediaOverlay,
       setShowInterrupted,
       updateMetrics
     );

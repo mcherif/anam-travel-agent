@@ -32,6 +32,7 @@ export class UIOrchestrator {
   private landmarks: LandmarkMap;
   private setCurrentLandmark: (landmark: Landmark | null) => void;
   private setUIState: (state: UIState) => void;
+  private showMediaOverlay: (id: string, kind: 'photo' | 'video') => void;
   private setShowInterrupted: (show: boolean) => void;
   private updateMetrics: (metrics: Record<string, unknown>) => void;
   private isReady: boolean;
@@ -41,6 +42,7 @@ export class UIOrchestrator {
     landmarks: LandmarkMap,
     setCurrentLandmark: (landmark: Landmark | null) => void,
     setUIState: (state: UIState) => void,
+    showMediaOverlay: (id: string, kind: 'photo' | 'video') => void,
     setShowInterrupted: (show: boolean) => void,
     updateMetrics: (metrics: Record<string, unknown>) => void
   ) {
@@ -48,6 +50,7 @@ export class UIOrchestrator {
     this.landmarks = landmarks;
     this.setCurrentLandmark = setCurrentLandmark;
     this.setUIState = setUIState;
+    this.showMediaOverlay = showMediaOverlay;
     this.setShowInterrupted = setShowInterrupted;
     this.updateMetrics = updateMetrics;
     this.isReady = false;
@@ -95,6 +98,9 @@ export class UIOrchestrator {
         break;
       case 'dim_previous_landmarks':
         this.dimPreviousLandmarks();
+        break;
+      case 'show_media':
+        this.showMedia(String(args.id), String(args.kind));
         break;
       default:
         console.warn(`[Orchestrator] Unknown tool: ${toolName}`);
@@ -200,6 +206,18 @@ export class UIOrchestrator {
     }
 
     this.setCurrentLandmark(landmark);
+  }
+
+  private showMedia(id: string, kind: string): void {
+    const landmark = this.landmarks[id];
+    if (!landmark) {
+      console.error(`[Orchestrator] Landmark not found: ${id}`);
+      return;
+    }
+
+    const resolvedKind = kind === 'video' ? 'video' : 'photo';
+    this.setCurrentLandmark(landmark);
+    this.showMediaOverlay(id, resolvedKind);
   }
 
   private dimPreviousLandmarks(): void {

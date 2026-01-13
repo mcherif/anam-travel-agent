@@ -33,6 +33,18 @@ type ImageItem = {
   licenseUrl?: string;
 };
 
+type VideoItem = {
+  url: string;
+  previewUrl?: string;
+  width?: number;
+  height?: number;
+  duration?: number;
+  pageUrl?: string;
+  provider?: string;
+};
+
+type MediaKind = 'photo' | 'video';
+
 type LandmarkMap = Record<string, Landmark>;
 
 type DebugMetrics = {
@@ -58,6 +70,12 @@ const MIC_TEST_MODE = import.meta.env.VITE_MIC_TEST === 'true';
 const TOOL_FALLBACK_MODE = import.meta.env.VITE_TOOL_FALLBACK === 'true';
 const LIVE_PHOTOS = import.meta.env.VITE_LIVE_PHOTOS === 'true';
 const PHOTO_PROVIDER = import.meta.env.VITE_PHOTO_PROVIDER as string | undefined;
+const VIDEO_PROVIDER = import.meta.env.VITE_VIDEO_PROVIDER as string | undefined;
+
+const CITY_COUNTRIES: Record<CityId, string> = {
+  tunis: 'Tunisia',
+  istanbul: 'Turkey'
+};
 
 if (MAPBOX_TOKEN) {
   mapboxgl.accessToken = MAPBOX_TOKEN;
@@ -388,7 +406,19 @@ const TravelAgentDemo = () => {
   const [liveImages, setLiveImages] = useState<ImageItem[]>([]);
   const [livePhotoStatus, setLivePhotoStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [livePhotoError, setLivePhotoError] = useState<string | null>(null);
+  const [mediaTab, setMediaTab] = useState<MediaKind>('photo');
+  const [liveVideos, setLiveVideos] = useState<VideoItem[]>([]);
+  const [liveVideoStatus, setLiveVideoStatus] = useState<
+    'idle' | 'loading' | 'ready' | 'empty' | 'error'
+  >('idle');
+  const [liveVideoError, setLiveVideoError] = useState<string | null>(null);
+  const [activeVideoIndex, setActiveVideoIndex] = useState(0);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [mediaNotice, setMediaNotice] = useState<string | null>(null);
+  const [mediaOverlay, setMediaOverlay] = useState<{
+    open: boolean;
+    landmarkId: string | null;
+  }>({ open: false, landmarkId: null });
   const debugZoomRef = useRef(debugZoom);
   const applyDebugZoomRef = useRef(applyDebugZoom);
   const toolCallsSeenRef = useRef(false);
@@ -438,6 +468,20 @@ const TravelAgentDemo = () => {
     return localImages;
   }, [liveImages, localImages]);
   const activeLandmarkImage = combinedImages[activeImageIndex] ?? localImages[0];
+  const mediaLandmark = mediaOverlay.landmarkId
+    ? cityConfig.allLandmarksById[mediaOverlay.landmarkId]
+    : currentLandmark;
+  const mediaImageUrl = activeLandmarkImage?.url || mediaLandmark?.imageUrl;
+  const mediaVideoUrl = mediaLandmark?.videoUrl;
+  const videoItems = useMemo<VideoItem[]>(() => {
+    const items = [...liveVideos];
+    if (mediaVideoUrl) {
+      items.unshift({ url: mediaVideoUrl, provider: 'local' });
+    }
+    return items;
+  }, [liveVideos, mediaVideoUrl]);
+  const activeVideo = videoItems[activeVideoIndex];
+  const hasVideo = videoItems.length > 0;
   const showStreetViewDiagnostics = !DEMO_MODE && debugVisible;
   const showStreetViewPanel =
     streetViewStatus === 'ready' ||
@@ -455,6 +499,36 @@ const TravelAgentDemo = () => {
       debugMetricsRef.current = next;
       return next;
     });
+  };
+
+  const openMediaOverlay = (id: string, kind: MediaKind) => {
+    const landmark = cityConfig.allLandmarksById[id];
+    if (!landmark) {
+      console.warn(`[Media] Landmark not found for media: ${id}`);
+      return;
+    }
+    setCurrentLandmark(landmark);
+    setMediaNotice(null);
+    setMediaTab(kind);
+    setMediaOverlay({ open: true, landmarkId: id });
+  };
+
+  const closeMediaOverlay = () => {
+    setMediaOverlay((prev) => ({ ...prev, open: false }));
+  };
+
+  const advanceMediaImage = (direction: number) => {
+    if (combinedImages.length === 0) {
+      return;
+    }
+    setActiveImageIndex((prev) => (prev + direction + combinedImages.length) % combinedImages.length);
+  };
+
+  const advanceMediaVideo = (direction: number) => {
+    if (videoItems.length === 0) {
+      return;
+    }
+    setActiveVideoIndex((prev) => (prev + direction + videoItems.length) % videoItems.length);
   };
 
   useEffect(() => {
@@ -516,6 +590,12 @@ const TravelAgentDemo = () => {
 
     return () => window.clearInterval(interval);
   }, [currentLandmark, combinedImages.length]);
+
+  useEffect(() => {
+    if (activeVideoIndex >= videoItems.length) {
+      setActiveVideoIndex(0);
+    }
+  }, [activeVideoIndex, videoItems.length]);
 
   const stopUserVideoTracks = () => {
     if (userVideoStreamRef.current) {
@@ -698,6 +778,7 @@ const TravelAgentDemo = () => {
       landmarksById,
       setCurrentLandmark,
       setUIState,
+      openMediaOverlay,
       setShowInterrupted,
       updateDebugMetrics
     );
@@ -859,6 +940,115 @@ const TravelAgentDemo = () => {
   }, [currentLandmark, selectedCity, BACKEND_URL, LIVE_PHOTOS]);
 
   useEffect(() => {
+    if (!mediaOverlay.open) {
+      setMediaTab('photo');
+      setMediaNotice(null);
+      setLiveVideoStatus('idle');
+      setLiveVideoError(null);
+      return;
+    }
+  }, [mediaOverlay.open]);
+
+  useEffect(() => {
+    setLiveVideos([]);
+    setLiveVideoStatus('idle');
+    setLiveVideoError(null);
+    setActiveVideoIndex(0);
+    setMediaNotice(null);
+  }, [mediaOverlay.landmarkId]);
+
+  useEffect(() => {
+    if (!mediaOverlay.open || mediaTab !== 'video') {
+      return;
+    }
+    if (!mediaLandmark) {
+      return;
+    }
+    if (!BACKEND_URL) {
+      setLiveVideos([]);
+      setLiveVideoStatus('error');
+      setLiveVideoError('Missing VITE_BACKEND_URL');
+      if (!mediaVideoUrl) {
+        setMediaNotice('Video search unavailable; showing photos.');
+        setMediaTab('photo');
+      }
+      return;
+    }
+
+    const controller = new AbortController();
+    let isActive = true;
+
+    const fetchVideos = async () => {
+      setLiveVideoStatus('loading');
+      setLiveVideoError(null);
+
+      const cityName = getCityData(selectedCityRef.current).city.name;
+      const country = CITY_COUNTRIES[selectedCityRef.current] || '';
+      const baseQuery = mediaLandmark.videoQuery
+        ? mediaLandmark.videoQuery
+        : `${mediaLandmark.name} ${cityName}${country ? ` ${country}` : ''}`;
+      const includeTerms = mediaLandmark.videoInclude ?? [];
+      const excludeTerms = mediaLandmark.videoExclude ?? [];
+      const providerParam = VIDEO_PROVIDER ? `&provider=${encodeURIComponent(VIDEO_PROVIDER)}` : '';
+      const includeParam = includeTerms.length
+        ? `&include=${encodeURIComponent(includeTerms.join(','))}`
+        : '';
+      const excludeParam = excludeTerms.length
+        ? `&exclude=${encodeURIComponent(excludeTerms.join(','))}`
+        : '';
+      try {
+        const response = await fetch(
+          `${BACKEND_URL}/api/videos?q=${encodeURIComponent(baseQuery)}&perPage=6${providerParam}${includeParam}${excludeParam}`,
+          { signal: controller.signal }
+        );
+        const data = (await response.json()) as { videos?: VideoItem[]; error?: string };
+        if (!isActive) {
+          return;
+        }
+        if (!response.ok) {
+          throw new Error(data?.error || 'Failed to fetch videos');
+        }
+        const videos = Array.isArray(data.videos) ? data.videos : [];
+        if (videos.length > 0) {
+          setLiveVideos(videos);
+          setLiveVideoStatus('ready');
+          setActiveVideoIndex(0);
+          setMediaNotice(null);
+          return;
+        }
+        setLiveVideos([]);
+        setLiveVideoStatus('empty');
+        if (!mediaVideoUrl) {
+          setMediaNotice('No videos found; showing photos.');
+          setMediaTab('photo');
+        }
+      } catch (error) {
+        if (!isActive) {
+          return;
+        }
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+        const message = error instanceof Error ? error.message : 'Failed to fetch videos';
+        setLiveVideos([]);
+        setLiveVideoStatus('error');
+        setLiveVideoError(message);
+        if (!mediaVideoUrl) {
+          setMediaNotice('Video search unavailable; showing photos.');
+          setMediaTab('photo');
+        }
+      }
+    };
+
+    fetchVideos();
+
+    return () => {
+      isActive = false;
+      controller.abort();
+    };
+  }, [mediaOverlay.open, mediaTab, mediaOverlay.landmarkId, mediaVideoUrl, BACKEND_URL, VIDEO_PROVIDER, mediaLandmark]);
+
+  useEffect(() => {
     if (!map.current || !mapReady) {
       return;
     }
@@ -963,6 +1153,27 @@ const TravelAgentDemo = () => {
               type: 'object',
               properties: {}
             }
+          },
+          {
+            type: 'client',
+            name: 'show_media',
+            description: 'Open a media overlay for a landmark (photo carousel or short clip).',
+            parameters: {
+              type: 'object',
+              properties: {
+                id: {
+                  type: 'string',
+                  description: 'Landmark identifier',
+                  enum: cityConfig.allLandmarkIds
+                },
+                kind: {
+                  type: 'string',
+                  description: 'Media type to show',
+                  enum: ['photo', 'video']
+                }
+              },
+              required: ['id', 'kind']
+            }
           }
         ];
 
@@ -988,6 +1199,10 @@ You have these tools to control the map visualization:
 3. **dim_previous_landmarks()** - Fade previous markers to maintain focus
    - Call before introducing a NEW landmark (not the first one)
 
+4. **show_media({ id, kind })** - Open a media overlay for extra wow factor
+   - kind: "photo" for the carousel, "video" for a short clip
+   - Call after show_landmark_panel when you want to highlight visuals
+
 ## Conversation Flow
 For each landmark you discuss:
 1. Call fly_to_landmark({ id: "landmark-id", zoom: 18 })
@@ -995,6 +1210,8 @@ For each landmark you discuss:
 3. Call show_landmark_panel({ id: "landmark-id" })
 4. Mention key highlights
 5. Before moving to next landmark, call dim_previous_landmarks()
+
+Optional: Call show_media({ id: "landmark-id", kind: "photo" }) for a full-screen carousel.
 
 ## City Starters
 ${citySummaries}
@@ -1176,7 +1393,9 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
       }
 
       if (
-        (toolName === 'fly_to_landmark' || toolName === 'show_landmark_panel') &&
+        (toolName === 'fly_to_landmark' ||
+          toolName === 'show_landmark_panel' ||
+          toolName === 'show_media') &&
         typeof normalizedArgs.id === 'string'
       ) {
         const targetCity = cityConfig.landmarkCityMap[normalizedArgs.id];
@@ -1458,6 +1677,16 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
     updateDebugMetrics({ toolCallQueue: updatedQueue });
   };
 
+  const handleDebugMedia = (kind: MediaKind) => {
+    const targetId = currentLandmark?.id || primaryLandmark?.id;
+    if (!targetId) {
+      setManualError('No landmark available for media preview.');
+      return;
+    }
+    setManualError(null);
+    openMediaOverlay(targetId, kind);
+  };
+
   const handleResume = () => {
     orchestratorRef.current?.handleResume();
     setShowInterrupted(false);
@@ -1719,6 +1948,98 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
       </div>
 
       <AnimatePresence>
+        {mediaOverlay.open && mediaLandmark && (
+          <motion.div
+            className="media-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={closeMediaOverlay}
+          >
+            <motion.div
+              className="media-card"
+              initial={{ y: 30, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 20, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 260, damping: 24 }}
+              onClick={(event) => event.stopPropagation()}
+              role="dialog"
+              aria-modal="true"
+              aria-label={`${mediaLandmark.name} media`}
+            >
+              <div className="media-header">
+                <div className="media-title">{mediaLandmark.name}</div>
+                <button className="media-close" onClick={closeMediaOverlay} aria-label="Close media overlay">
+                  x
+                </button>
+              </div>
+              <div className="media-tabs">
+                <button
+                  className={`media-tab ${mediaTab === 'photo' ? 'media-tab-active' : ''}`}
+                  onClick={() => setMediaTab('photo')}
+                >
+                  Photos
+                </button>
+                <button
+                  className={`media-tab ${mediaTab === 'video' ? 'media-tab-active' : ''}`}
+                  onClick={() => setMediaTab('video')}
+                >
+                  Video
+                </button>
+              </div>
+              {mediaNotice && <div className="media-notice">{mediaNotice}</div>}
+              <div className="media-body">
+                {mediaTab === 'video' ? (
+                  liveVideoStatus === 'loading' && !hasVideo ? (
+                    <p className="media-status">Loading video...</p>
+                  ) : hasVideo && activeVideo ? (
+                    <video
+                      className="media-video"
+                      src={activeVideo.url}
+                      poster={activeVideo.previewUrl}
+                      controls
+                    />
+                  ) : (
+                    <p className="media-status">No videos available yet.</p>
+                  )
+                ) : mediaImageUrl ? (
+                  <img className="media-image" src={mediaImageUrl} alt={mediaLandmark.name} />
+                ) : (
+                  <p className="media-status">No media available for this landmark yet.</p>
+                )}
+              </div>
+              {mediaTab === 'photo' && combinedImages.length > 1 && (
+                <div className="media-controls">
+                  <button className="media-button" onClick={() => advanceMediaImage(-1)} aria-label="Previous image">
+                    {'<'}
+                  </button>
+                  <span className="media-counter">
+                    {activeImageIndex + 1}/{combinedImages.length}
+                  </span>
+                  <button className="media-button" onClick={() => advanceMediaImage(1)} aria-label="Next image">
+                    {'>'}
+                  </button>
+                </div>
+              )}
+              {mediaTab === 'video' && videoItems.length > 1 && (
+                <div className="media-controls">
+                  <button className="media-button" onClick={() => advanceMediaVideo(-1)} aria-label="Previous video">
+                    {'<'}
+                  </button>
+                  <span className="media-counter">
+                    {activeVideoIndex + 1}/{videoItems.length}
+                  </span>
+                  <button className="media-button" onClick={() => advanceMediaVideo(1)} aria-label="Next video">
+                    {'>'}
+                  </button>
+                </div>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
         {showInterrupted && (
           <motion.div
             className="interrupted-overlay"
@@ -1813,6 +2134,14 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
           <div className="manual-row">
             <button className="manual-button" onClick={runToolTest}>
               Test Tool Call
+            </button>
+          </div>
+          <div className="manual-row">
+            <button className="manual-button" onClick={() => handleDebugMedia('photo')}>
+              Show Media (Photos)
+            </button>
+            <button className="manual-button manual-button-secondary" onClick={() => handleDebugMedia('video')}>
+              Show Media (Video)
             </button>
           </div>
           {manualError && <div className="manual-error">{manualError}</div>}

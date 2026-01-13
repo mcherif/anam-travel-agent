@@ -34,13 +34,17 @@ const getFetch = () => {
 const OPENVERSE_API_URL = process.env.OPENVERSE_API_URL || 'https://api.openverse.org/v1/images';
 const OPENVERSE_LICENSE_TYPE = process.env.OPENVERSE_LICENSE_TYPE || 'all';
 const PEXELS_API_URL = process.env.PEXELS_API_URL || 'https://api.pexels.com/v1/search';
+const PEXELS_VIDEO_API_URL = process.env.PEXELS_VIDEO_API_URL || 'https://api.pexels.com/videos/search';
 const PHOTO_PROVIDER = (process.env.PHOTO_PROVIDER || 'openverse').toLowerCase();
+const VIDEO_PROVIDER = (process.env.VIDEO_PROVIDER || 'pexels').toLowerCase();
 const PEXELS_LICENSE = {
   name: 'Pexels License',
   url: 'https://www.pexels.com/license/'
 };
 const PHOTO_CACHE_TTL_MS = 1000 * 60 * 10;
 const photoCache = new Map();
+const VIDEO_CACHE_TTL_MS = 1000 * 60 * 10;
+const videoCache = new Map();
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
@@ -206,6 +210,109 @@ app.get('/api/photos', async (req, res) => {
     res.json(payload);
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch photos' });
+  }
+});
+
+app.get('/api/videos', async (req, res) => {
+  try {
+    const query =
+      (typeof req.query.q === 'string' && req.query.q.trim()) ||
+      (typeof req.query.query === 'string' && req.query.query.trim()) ||
+      '';
+    if (!query) {
+      res.status(400).json({ error: 'Missing query parameter' });
+      return;
+    }
+
+    const perPageRaw = Number(req.query.perPage || req.query.per_page || 6);
+    const perPage = Number.isFinite(perPageRaw) ? Math.min(Math.max(perPageRaw, 1), 10) : 6;
+    const providerParam = typeof req.query.provider === 'string' ? req.query.provider.toLowerCase() : '';
+    const includeParam = typeof req.query.include === 'string' ? req.query.include : '';
+    const excludeParam = typeof req.query.exclude === 'string' ? req.query.exclude : '';
+    const includeTerms = includeParam
+      .split(',')
+      .map((term) => term.trim().toLowerCase())
+      .filter(Boolean);
+    const excludeTerms = excludeParam
+      .split(',')
+      .map((term) => term.trim().toLowerCase())
+      .filter(Boolean);
+    const provider = providerParam || VIDEO_PROVIDER;
+    const cacheKey = `${provider}|${query.toLowerCase()}|${perPage}`;
+    const cached = videoCache.get(cacheKey);
+    if (cached && Date.now() - cached.timestamp < VIDEO_CACHE_TTL_MS) {
+      res.json(cached.payload);
+      return;
+    }
+
+    if (provider !== 'pexels') {
+      const payload = { query, provider, videos: [] };
+      videoCache.set(cacheKey, { timestamp: Date.now(), payload });
+      res.json(payload);
+      return;
+    }
+
+    const apiKey = process.env.PEXELS_API_KEY;
+    if (!apiKey) {
+      res.status(500).json({ error: 'Missing PEXELS_API_KEY' });
+      return;
+    }
+
+    const params = new URLSearchParams({
+      query,
+      per_page: String(perPage)
+    });
+    const response = await getFetch()(`${PEXELS_VIDEO_API_URL}?${params.toString()}`, {
+      headers: { Authorization: apiKey, 'User-Agent': 'anam-travel-agent/1.0' }
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error('Failed to fetch Pexels videos');
+    }
+
+    const results = Array.isArray(data.videos) ? data.videos : [];
+    const filteredResults = results.filter((video) => {
+      const url = String(video.url || '').toLowerCase();
+      const author = String(video.user?.name || '').toLowerCase();
+      if (excludeTerms.some((term) => url.includes(term) || author.includes(term))) {
+        return false;
+      }
+      if (includeTerms.length === 0) {
+        return true;
+      }
+      return includeTerms.some((term) => url.includes(term) || author.includes(term));
+    });
+    const usableResults = includeTerms.length > 0 && filteredResults.length === 0 ? results : filteredResults;
+    const videos = usableResults
+      .map((video) => {
+        const files = Array.isArray(video.video_files) ? video.video_files : [];
+        const mp4Files = files.filter((file) => file.file_type === 'video/mp4');
+        const preferred =
+          mp4Files.find((file) => typeof file.width === 'number' && file.width <= 1280) ||
+          mp4Files[0];
+        if (!preferred?.link) {
+          return null;
+        }
+        const pictures = Array.isArray(video.video_pictures) ? video.video_pictures : [];
+        const preview = pictures[0]?.picture;
+        return {
+          id: video.id,
+          url: preferred.link,
+          previewUrl: preview || '',
+          width: preferred.width,
+          height: preferred.height,
+          duration: video.duration,
+          pageUrl: video.url || '',
+          provider: 'Pexels'
+        };
+      })
+      .filter(Boolean);
+
+    const payload = { query, provider: 'pexels', videos };
+    videoCache.set(cacheKey, { timestamp: Date.now(), payload });
+    res.json(payload);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch videos' });
   }
 });
 
