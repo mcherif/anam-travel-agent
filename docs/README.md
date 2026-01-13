@@ -96,6 +96,8 @@ Create a `.env` file:
 ANAM_API_KEY=your_anam_api_key_here
 PORT=3001
 CORS_ORIGINS=http://localhost:3000
+FLICKR_API_KEY=
+FLICKR_LICENSES=4,5,9,10
 
 # Frontend
 VITE_MAPBOX_TOKEN=your_mapbox_token_here
@@ -104,10 +106,12 @@ VITE_CITY=tunis
 VITE_DEMO_MODE=true
 VITE_TOOL_FALLBACK=false
 VITE_MAPILLARY_TOKEN=
+VITE_LIVE_PHOTOS=false
 ```
 
 Set `VITE_CITY` to `tunis` or `istanbul` to choose the default city.
 Set `VITE_MAPILLARY_TOKEN` to enable street-level imagery (Mapillary).
+Set `VITE_LIVE_PHOTOS=true` and `FLICKR_API_KEY` to fetch live photos from Flickr.
 
 ## Usage
 

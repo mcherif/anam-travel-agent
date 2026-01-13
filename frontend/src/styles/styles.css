@@ -396,6 +396,27 @@
   display: block;
 }
 
+.landmark-photo-status {
+  margin: 8px 20px 0;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.landmark-photo-credit {
+  margin: 8px 20px 0;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.landmark-photo-credit a {
+  color: #4f46e5;
+  text-decoration: none;
+}
+
+.landmark-photo-credit a:hover {
+  text-decoration: underline;
+}
+
 .landmark-info-panel h2 {
   margin: 20px 20px 10px;
   font-size: 24px;

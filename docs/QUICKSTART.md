@@ -33,6 +33,8 @@ Create `backend/.env` (or copy from `.env.example`):
 ANAM_API_KEY=your_anam_api_key_here
 PORT=3001
 CORS_ORIGINS=http://localhost:3000
+FLICKR_API_KEY=
+FLICKR_LICENSES=4,5,9,10
 ```
 
 Start the server:
@@ -60,10 +62,12 @@ VITE_CITY=tunis
 VITE_DEMO_MODE=true
 VITE_TOOL_FALLBACK=false
 VITE_MAPILLARY_TOKEN=
+VITE_LIVE_PHOTOS=false
 ```
 
 Set `VITE_CITY` to `tunis` or `istanbul` to choose the default city.
 Set `VITE_MAPILLARY_TOKEN` to enable street-level imagery (Mapillary).
+Set `VITE_LIVE_PHOTOS=true` and `FLICKR_API_KEY` to enable live Flickr photos.
 
 Start the dev server:
 

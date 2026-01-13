@@ -22,6 +22,16 @@ type ToolCallEntry = {
   status: 'pending' | 'executing' | 'complete';
 };
 
+type ImageItem = {
+  url: string;
+  source: 'local' | 'flickr';
+  title?: string;
+  author?: string;
+  pageUrl?: string;
+  license?: string;
+  licenseUrl?: string;
+};
+
 type LandmarkMap = Record<string, Landmark>;
 
 type DebugMetrics = {
@@ -45,6 +55,7 @@ const MAPILLARY_TOKEN = import.meta.env.VITE_MAPILLARY_TOKEN as string | undefin
 const DEMO_MODE = import.meta.env.VITE_DEMO_MODE !== 'false';
 const MIC_TEST_MODE = import.meta.env.VITE_MIC_TEST === 'true';
 const TOOL_FALLBACK_MODE = import.meta.env.VITE_TOOL_FALLBACK === 'true';
+const LIVE_PHOTOS = import.meta.env.VITE_LIVE_PHOTOS === 'true';
 
 if (MAPBOX_TOKEN) {
   mapboxgl.accessToken = MAPBOX_TOKEN;
@@ -372,6 +383,9 @@ const TravelAgentDemo = () => {
   const [cameraStatus, setCameraStatus] = useState<'idle' | 'starting' | 'active' | 'error'>('idle');
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [cameraPanelCollapsed, setCameraPanelCollapsed] = useState(true);
+  const [liveImages, setLiveImages] = useState<ImageItem[]>([]);
+  const [livePhotoStatus, setLivePhotoStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
+  const [livePhotoError, setLivePhotoError] = useState<string | null>(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const debugZoomRef = useRef(debugZoom);
   const applyDebugZoomRef = useRef(applyDebugZoom);
@@ -405,12 +419,23 @@ const TravelAgentDemo = () => {
   const userVideoStreamRef = useRef<MediaStream | null>(null);
 
   const [currentLandmark, setCurrentLandmark] = useState<Landmark | null>(null);
-  const landmarkImages = currentLandmark
-    ? currentLandmark.imageUrls && currentLandmark.imageUrls.length > 0
-      ? currentLandmark.imageUrls
-      : [currentLandmark.imageUrl]
-    : [];
-  const activeLandmarkImage = landmarkImages[activeImageIndex] ?? currentLandmark?.imageUrl;
+  const localImages = useMemo<ImageItem[]>(() => {
+    if (!currentLandmark) {
+      return [];
+    }
+    const urls =
+      currentLandmark.imageUrls && currentLandmark.imageUrls.length > 0
+        ? currentLandmark.imageUrls
+        : [currentLandmark.imageUrl];
+    return urls.map((url) => ({ url, source: 'local' }));
+  }, [currentLandmark]);
+  const combinedImages = useMemo<ImageItem[]>(() => {
+    if (liveImages.length > 0) {
+      return [...liveImages, ...localImages];
+    }
+    return localImages;
+  }, [liveImages, localImages]);
+  const activeLandmarkImage = combinedImages[activeImageIndex] ?? localImages[0];
 
   const updateDebugMetrics = (updates: Partial<DebugMetrics>) => {
     setDebugMetrics((prev) => {
@@ -472,18 +497,18 @@ const TravelAgentDemo = () => {
   };
 
   useEffect(() => {
-    if (!currentLandmark || landmarkImages.length <= 1) {
+    if (!currentLandmark || combinedImages.length <= 1) {
       setActiveImageIndex(0);
       return;
     }
 
     setActiveImageIndex(0);
     const interval = window.setInterval(() => {
-      setActiveImageIndex((prev) => (prev + 1) % landmarkImages.length);
+      setActiveImageIndex((prev) => (prev + 1) % combinedImages.length);
     }, 4000);
 
     return () => window.clearInterval(interval);
-  }, [currentLandmark, landmarkImages.length]);
+  }, [currentLandmark, combinedImages.length]);
 
   const stopUserVideoTracks = () => {
     if (userVideoStreamRef.current) {
@@ -739,6 +764,89 @@ const TravelAgentDemo = () => {
       controller.abort();
     };
   }, [currentLandmark, MAPILLARY_TOKEN]);
+
+  useEffect(() => {
+    if (!currentLandmark || !LIVE_PHOTOS) {
+      setLiveImages([]);
+      setLivePhotoStatus('idle');
+      setLivePhotoError(null);
+      return;
+    }
+
+    if (!BACKEND_URL) {
+      setLiveImages([]);
+      setLivePhotoStatus('error');
+      setLivePhotoError('Missing VITE_BACKEND_URL');
+      return;
+    }
+
+    const controller = new AbortController();
+    let isActive = true;
+    const cityName = getCityData(selectedCityRef.current).city.name;
+    const query = `${currentLandmark.name} ${cityName}`;
+
+    const fetchLivePhotos = async () => {
+      setLivePhotoStatus('loading');
+      setLivePhotoError(null);
+
+      try {
+        const response = await fetch(
+          `${BACKEND_URL}/api/photos?q=${encodeURIComponent(query)}&perPage=6`,
+          { signal: controller.signal }
+        );
+        const data = (await response.json()) as {
+          photos?: Array<{
+            imageUrl?: string;
+            title?: string;
+            ownerName?: string;
+            pageUrl?: string;
+            license?: string;
+            licenseUrl?: string;
+          }>;
+        };
+        if (!isActive) {
+          return;
+        }
+        if (!response.ok) {
+          throw new Error(data ? JSON.stringify(data) : 'Failed to load photos');
+        }
+
+        const photos =
+          data.photos
+            ?.filter((photo) => typeof photo.imageUrl === 'string')
+            .map((photo) => ({
+              url: photo.imageUrl as string,
+              source: 'flickr' as const,
+              title: photo.title,
+              author: photo.ownerName,
+              pageUrl: photo.pageUrl,
+              license: photo.license,
+              licenseUrl: photo.licenseUrl
+            })) || [];
+
+        setLiveImages(photos);
+        setLivePhotoStatus(photos.length > 0 ? 'ready' : 'idle');
+      } catch (error) {
+        if (!isActive) {
+          return;
+        }
+        if (error instanceof DOMException && error.name === 'AbortError') {
+          return;
+        }
+        console.warn('Failed to load live photos:', error);
+        setLiveImages([]);
+        setLivePhotoStatus('error');
+        setLivePhotoError(error instanceof Error ? error.message : 'Failed to load photos');
+      }
+    };
+
+    fetchLivePhotos();
+
+    return () => {
+      isActive = false;
+      controller.abort();
+    };
+  }, [currentLandmark, selectedCity, BACKEND_URL, LIVE_PHOTOS]);
 
   useEffect(() => {
     if (!map.current || !mapReady) {
@@ -1518,8 +1626,8 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
             >
               <AnimatePresence mode="wait">
                 <motion.img
-                  key={activeLandmarkImage || currentLandmark.imageUrl}
-                  src={activeLandmarkImage || currentLandmark.imageUrl}
+                  key={activeLandmarkImage?.url || currentLandmark.imageUrl}
+                  src={activeLandmarkImage?.url || currentLandmark.imageUrl}
                   alt={currentLandmark.name}
                   className="landmark-image"
                   initial={{ opacity: 0 }}
@@ -1528,6 +1636,20 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
                   transition={{ duration: 0.4 }}
                 />
               </AnimatePresence>
+              {LIVE_PHOTOS && livePhotoStatus === 'loading' && (
+                <div className="landmark-photo-status">Loading live photos...</div>
+              )}
+              {activeLandmarkImage?.source === 'flickr' && activeLandmarkImage.pageUrl && (
+                <div className="landmark-photo-credit">
+                  Photo:{' '}
+                  <a href={activeLandmarkImage.pageUrl} target="_blank" rel="noreferrer">
+                    {activeLandmarkImage.title || 'Flickr'}
+                  </a>
+                  {activeLandmarkImage.author && ` by ${activeLandmarkImage.author}`}
+                  {activeLandmarkImage.license &&
+                    ` (${activeLandmarkImage.license})`}
+                </div>
+              )}
               <h2>{currentLandmark.name}</h2>
               <p className="landmark-type">{currentLandmark.type}</p>
               <p className="landmark-description">{currentLandmark.description}</p>
@@ -1672,6 +1794,9 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
             </button>
           </div>
           {manualError && <div className="manual-error">{manualError}</div>}
+          {livePhotoStatus === 'error' && livePhotoError && (
+            <div className="manual-error">Live photos: {livePhotoError}</div>
+          )}
         </div>
       )}
     </div>
