@@ -10,6 +10,8 @@ This demo showcases sophisticated UI synchronization with Anam's AI personas. As
 
 <video src="Anam-travel-assistant.mp4" controls width="720"></video>
 
+If the video does not render on GitHub, use this link: [Watch the demo video](Anam-travel-assistant.mp4)
+
 ## Key Features
 
 ### 1. Speech-Synchronized Map Highlighting
