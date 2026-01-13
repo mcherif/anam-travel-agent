@@ -6,11 +6,11 @@ This demo showcases sophisticated UI synchronization with [Anam](https://anam.ai
 
 ## Preview
 
-<img src="Anam-travel-assistant-snapshot.png" alt="Anam travel assistant preview" width="720">
+<img src="Anam-travel-assistant-snapshot-2.png" alt="Anam travel assistant preview" width="720">
 
-<video src="Anam-travel-assistant.mp4" controls width="720"></video>
+<video src="Anam-travel-assistant-2.mp4" controls width="720"></video>
 
-If the video does not render on GitHub, use this link and click **View raw** to download: [Watch the demo video](Anam-travel-assistant.mp4)
+If the video does not render on GitHub, use this link and click **View raw** to download: [Watch the demo video](Anam-travel-assistant-2.mp4)
 
 ## Key Features
 

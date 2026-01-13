@@ -438,6 +438,11 @@ const TravelAgentDemo = () => {
     return localImages;
   }, [liveImages, localImages]);
   const activeLandmarkImage = combinedImages[activeImageIndex] ?? localImages[0];
+  const showStreetViewDiagnostics = !DEMO_MODE && debugVisible;
+  const showStreetViewPanel =
+    streetViewStatus === 'ready' ||
+    streetViewStatus === 'loading' ||
+    (showStreetViewDiagnostics && streetViewStatus !== 'idle');
 
   const updateDebugMetrics = (updates: Partial<DebugMetrics>) => {
     setDebugMetrics((prev) => {
@@ -1682,7 +1687,7 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
                 </div>
               )}
 
-              {(streetViewStatus === 'ready' || streetViewStatus === 'loading') && (
+              {showStreetViewPanel && (
                 <div className="street-view-panel">
                   <h3>Street View</h3>
                   {streetViewStatus === 'ready' && streetViewUrl && (
@@ -1695,6 +1700,17 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
                   {streetViewStatus === 'loading' && (
                     <p className="street-view-status">Loading street imagery...</p>
                   )}
+                  {showStreetViewDiagnostics &&
+                    streetViewStatus !== 'ready' &&
+                    streetViewStatus !== 'loading' && (
+                      <p className="street-view-status">
+                        {streetViewStatus === 'unavailable'
+                          ? !MAPILLARY_TOKEN
+                            ? 'Street View unavailable: missing VITE_MAPILLARY_TOKEN.'
+                            : 'Street View unavailable: no Mapillary imagery near this landmark.'
+                          : 'Street View failed to load. Check the console/network for Mapillary API errors.'}
+                      </p>
+                    )}
                 </div>
               )}
             </motion.div>

@@ -10,7 +10,7 @@
       {
         "id": "medina",
         "name": "Medina of Tunis",
-        "coordinates": [10.166667, 36.816667],
+        "coordinates": [10.1717399, 36.7986935],
         "type": "historical",
         "keywords": ["medina", "old city", "unesco", "world heritage"],
         "description": "UNESCO World Heritage site, one of the best preserved Islamic cities in the Arab world",
@@ -88,14 +88,14 @@
       {
         "id": "sidi-bou-said",
         "name": "Sidi Bou Said",
-        "coordinates": [10.341014, 36.869758],
+        "coordinates": [10.3517611, 36.8668483],
         "type": "village",
-        "keywords": ["sidi bou said", "blue and white", "cliff", "village"],
-        "description": "Picturesque cliff-side village famous for its blue and white architecture",
+        "keywords": ["sidi bou said", "blue and white", "cliff", "village", "marina", "port"],
+        "description": "Picturesque cliff-side village with a Mediterranean marina and blue-and-white architecture",
         "foundedYear": "12th century",
         "highlights": [
           "Iconic blue doors and white walls",
-          "Cafes with sweeping Mediterranean views",
+          "Marina promenade and Mediterranean views",
           "Artists and galleries tucked into alleys"
         ],
         "imageUrl": "/images/sidi-bou-said.jpg",
