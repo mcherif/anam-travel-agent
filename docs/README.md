@@ -2,7 +2,7 @@
 
 ## Overview
 
-This demo showcases sophisticated UI synchronization with Anam's AI personas. As the travel agent persona (Sofia) describes landmarks in Tunis, the map automatically zooms, highlights, and displays information about each location in real time, synchronized with her speech.
+This demo showcases sophisticated UI synchronization with [Anam](https://anam.ai)'s AI personas. As the travel agent persona (Sofia) describes landmarks in Tunis, the map automatically zooms, highlights, and displays information about each location in real time, synchronized with her speech.
 
 ## Preview
 
@@ -10,7 +10,7 @@ This demo showcases sophisticated UI synchronization with Anam's AI personas. As
 
 <video src="Anam-travel-assistant.mp4" controls width="720"></video>
 
-If the video does not render on GitHub, use this link: [Watch the demo video](Anam-travel-assistant.mp4)
+If the video does not render on GitHub, use this link and click **View raw** to download: [Watch the demo video](Anam-travel-assistant.mp4)
 
 ## Key Features
 
@@ -33,7 +33,7 @@ If the video does not render on GitHub, use this link: [Watch the demo video](An
 ```
 User Browser
   - React UI + Mapbox GL
-  - Anam SDK (persona, tools, events)
+  - [Anam SDK](https://docs.anam.ai) (persona, tools, events)
   - UI Orchestrator (tool handlers)
 
 Backend (recommended)
