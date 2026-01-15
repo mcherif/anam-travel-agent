@@ -134,6 +134,7 @@ Set `VIDEO_PROVIDER=pexels` (backend) and `VITE_VIDEO_PROVIDER=pexels` to enable
 
 1. Start the session token backend
 2. Start your React app
+   - Or run `.\run-anam-travel.cmd` from the repo root to start both (use `-Install` once).
 3. (Optional) Set `VITE_CITY=istanbul` to switch the default city
 4. Click "Start Your Journey"
 5. Ask Sofia about the city: "Tell me about Tunis"
@@ -304,6 +305,7 @@ Modify the system prompt in `frontend/src/components/TravelAgentDemo.tsx` and ad
 7. User reviews and ratings
 8. Booking integrations
 9. Dynamic landmark discovery (e.g., Wikidata/OSM search + tool schema refresh)
+10. Personalization moment: prompt for a vibe (history, food, aesthetic photos, budget-friendly), then update itinerary + media queries via `set_preferences({ vibe, walking_level, budget })` and `generate_itinerary({ ... })` (client-only mock)
 
 ### Advanced Features
 

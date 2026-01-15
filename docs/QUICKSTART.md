@@ -94,6 +94,7 @@ Start the dev server:
 npm run dev
 ```
 
+Tip: from the repo root, run `.\run-anam-travel.cmd` to start backend + frontend together (use `-Install` once).
 
 ---
 

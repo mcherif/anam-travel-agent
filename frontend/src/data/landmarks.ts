@@ -10,6 +10,8 @@ export type Landmark = {
   highlights: string[];
   imageUrl: string;
   imageUrls?: string[];
+  photoQuery?: string;
+  photoExclude?: string[];
   videoUrl?: string;
   videoQuery?: string;
   videoInclude?: string[];

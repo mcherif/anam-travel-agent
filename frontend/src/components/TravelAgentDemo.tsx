@@ -44,6 +44,8 @@ type VideoItem = {
 };
 
 type MediaKind = 'photo' | 'video';
+type MediaMode = 'curated' | 'live';
+type LayoutMode = 'intro' | 'tour' | 'wrapup';
 
 type LandmarkMap = Record<string, Landmark>;
 
@@ -71,6 +73,7 @@ const TOOL_FALLBACK_MODE = import.meta.env.VITE_TOOL_FALLBACK === 'true';
 const LIVE_PHOTOS = import.meta.env.VITE_LIVE_PHOTOS === 'true';
 const PHOTO_PROVIDER = import.meta.env.VITE_PHOTO_PROVIDER as string | undefined;
 const VIDEO_PROVIDER = import.meta.env.VITE_VIDEO_PROVIDER as string | undefined;
+const EXCLUDE_PEOPLE = true;
 
 const CITY_COUNTRIES: Record<CityId, string> = {
   tunis: 'Tunisia',
@@ -175,6 +178,27 @@ const normalizeToolArgs = (rawArgs: unknown, landmarks: LandmarkMap) => {
   }
 
   return args;
+};
+
+const normalizeLayoutMode = (value: unknown): LayoutMode | undefined => {
+  if (typeof value !== 'string') {
+    return undefined;
+  }
+  const normalized = value.trim().toLowerCase().replace(/[-\s]+/g, '_');
+  switch (normalized) {
+    case 'intro':
+    case 'overview':
+      return 'intro';
+    case 'tour':
+    case 'landmark':
+    case 'landmark_deep_dive':
+      return 'tour';
+    case 'wrapup':
+    case 'wrap_up':
+      return 'wrapup';
+    default:
+      return undefined;
+  }
 };
 
 const findCityInText = (text: string, lookup: Array<{ id: CityId; name: string }>) => {
@@ -403,6 +427,8 @@ const TravelAgentDemo = () => {
   const [cameraStatus, setCameraStatus] = useState<'idle' | 'starting' | 'active' | 'error'>('idle');
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [cameraPanelCollapsed, setCameraPanelCollapsed] = useState(true);
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>('tour');
+  const [mediaMode, setMediaMode] = useState<MediaMode>(LIVE_PHOTOS ? 'live' : 'curated');
   const [liveImages, setLiveImages] = useState<ImageItem[]>([]);
   const [livePhotoStatus, setLivePhotoStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [livePhotoError, setLivePhotoError] = useState<string | null>(null);
@@ -433,7 +459,7 @@ const TravelAgentDemo = () => {
   const [showInterrupted, setShowInterrupted] = useState(false);
 
   const [debugVisible, setDebugVisible] = useState(false);
-  const [manualControlsVisible, setManualControlsVisible] = useState(true);
+  const [manualControlsVisible, setManualControlsVisible] = useState(false);
   const initialMetrics: DebugMetrics = {
     lastEvent: null,
     toolCallQueue: [],
@@ -473,6 +499,9 @@ const TravelAgentDemo = () => {
     : currentLandmark;
   const mediaImageUrl = activeLandmarkImage?.url || mediaLandmark?.imageUrl;
   const mediaVideoUrl = mediaLandmark?.videoUrl;
+  const liveMediaEnabled = mediaMode === 'live';
+  const livePhotoEnabled = liveMediaEnabled && LIVE_PHOTOS;
+  const streetViewEnabled = liveMediaEnabled;
   const videoItems = useMemo<VideoItem[]>(() => {
     const items = [...liveVideos];
     if (mediaVideoUrl) {
@@ -509,7 +538,12 @@ const TravelAgentDemo = () => {
     }
     setCurrentLandmark(landmark);
     setMediaNotice(null);
-    setMediaTab(kind);
+    if (kind === 'video' && !liveMediaEnabled && !landmark.videoUrl) {
+      setMediaNotice('Live video is disabled; showing photos.');
+      setMediaTab('photo');
+    } else {
+      setMediaTab(kind);
+    }
     setMediaOverlay({ open: true, landmarkId: id });
   };
 
@@ -795,6 +829,12 @@ const TravelAgentDemo = () => {
       return;
     }
 
+    if (!streetViewEnabled) {
+      setStreetViewUrl(null);
+      setStreetViewStatus('idle');
+      return;
+    }
+
     if (!MAPILLARY_TOKEN) {
       setStreetViewUrl(null);
       setStreetViewStatus('unavailable');
@@ -854,7 +894,7 @@ const TravelAgentDemo = () => {
   }, [currentLandmark, MAPILLARY_TOKEN]);
 
   useEffect(() => {
-    if (!currentLandmark || !LIVE_PHOTOS) {
+    if (!currentLandmark || !livePhotoEnabled) {
       setLiveImages([]);
       setLivePhotoStatus('idle');
       setLivePhotoError(null);
@@ -871,7 +911,11 @@ const TravelAgentDemo = () => {
     const controller = new AbortController();
     let isActive = true;
     const cityName = getCityData(selectedCityRef.current).city.name;
-    const query = `${currentLandmark.name} ${cityName}`;
+    const country = CITY_COUNTRIES[selectedCityRef.current] || '';
+    const baseQuery = currentLandmark.photoQuery
+      ? currentLandmark.photoQuery
+      : `${currentLandmark.name} ${cityName}${country ? ` ${country}` : ''}`;
+    const query = baseQuery;
 
     const fetchLivePhotos = async () => {
       setLivePhotoStatus('loading');
@@ -879,8 +923,13 @@ const TravelAgentDemo = () => {
 
       try {
         const providerParam = PHOTO_PROVIDER ? `&provider=${encodeURIComponent(PHOTO_PROVIDER)}` : '';
+        const excludeTerms = currentLandmark.photoExclude ?? [];
+        const excludeParam = excludeTerms.length
+          ? `&exclude=${encodeURIComponent(excludeTerms.join(','))}`
+          : '';
+        const excludePeopleParam = EXCLUDE_PEOPLE ? '&excludePeople=true' : '';
         const response = await fetch(
-          `${BACKEND_URL}/api/photos?q=${encodeURIComponent(query)}&perPage=6${providerParam}`,
+          `${BACKEND_URL}/api/photos?q=${encodeURIComponent(query)}&perPage=6${providerParam}${excludeParam}${excludePeopleParam}`,
           { signal: controller.signal }
         );
         const data = (await response.json()) as {
@@ -937,7 +986,7 @@ const TravelAgentDemo = () => {
       isActive = false;
       controller.abort();
     };
-  }, [currentLandmark, selectedCity, BACKEND_URL, LIVE_PHOTOS]);
+  }, [currentLandmark, selectedCity, BACKEND_URL, livePhotoEnabled]);
 
   useEffect(() => {
     if (!mediaOverlay.open) {
@@ -962,6 +1011,16 @@ const TravelAgentDemo = () => {
       return;
     }
     if (!mediaLandmark) {
+      return;
+    }
+    if (!liveMediaEnabled) {
+      setLiveVideos([]);
+      setLiveVideoStatus('idle');
+      setLiveVideoError(null);
+      if (!mediaVideoUrl) {
+        setMediaNotice('Live video is disabled; showing photos.');
+        setMediaTab('photo');
+      }
       return;
     }
     if (!BACKEND_URL) {
@@ -996,9 +1055,10 @@ const TravelAgentDemo = () => {
       const excludeParam = excludeTerms.length
         ? `&exclude=${encodeURIComponent(excludeTerms.join(','))}`
         : '';
+      const excludePeopleParam = EXCLUDE_PEOPLE ? '&excludePeople=true' : '';
       try {
         const response = await fetch(
-          `${BACKEND_URL}/api/videos?q=${encodeURIComponent(baseQuery)}&perPage=6${providerParam}${includeParam}${excludeParam}`,
+          `${BACKEND_URL}/api/videos?q=${encodeURIComponent(baseQuery)}&perPage=6${providerParam}${includeParam}${excludeParam}${excludePeopleParam}`,
           { signal: controller.signal }
         );
         const data = (await response.json()) as { videos?: VideoItem[]; error?: string };
@@ -1046,7 +1106,31 @@ const TravelAgentDemo = () => {
       isActive = false;
       controller.abort();
     };
-  }, [mediaOverlay.open, mediaTab, mediaOverlay.landmarkId, mediaVideoUrl, BACKEND_URL, VIDEO_PROVIDER, mediaLandmark]);
+  }, [
+    mediaOverlay.open,
+    mediaTab,
+    mediaOverlay.landmarkId,
+    mediaVideoUrl,
+    liveMediaEnabled,
+    BACKEND_URL,
+    VIDEO_PROVIDER,
+    mediaLandmark
+  ]);
+
+  useEffect(() => {
+    if (!liveMediaEnabled) {
+      setLiveImages([]);
+      setLivePhotoStatus('idle');
+      setLivePhotoError(null);
+      setLiveVideos([]);
+      setLiveVideoStatus('idle');
+      setLiveVideoError(null);
+      if (mediaTab === 'video' && !mediaVideoUrl) {
+        setMediaNotice('Live media is disabled; showing photos.');
+        setMediaTab('photo');
+      }
+    }
+  }, [liveMediaEnabled, mediaTab, mediaVideoUrl]);
 
   useEffect(() => {
     if (!map.current || !mapReady) {
@@ -1104,6 +1188,22 @@ const TravelAgentDemo = () => {
                 }
               },
               required: ['id']
+            }
+          },
+          {
+            type: 'client',
+            name: 'set_layout',
+            description: 'Switch the split-screen layout between intro, tour, and wrap-up modes.',
+            parameters: {
+              type: 'object',
+              properties: {
+                mode: {
+                  type: 'string',
+                  description: 'Layout mode',
+                  enum: ['intro', 'tour', 'wrapup']
+                }
+              },
+              required: ['mode']
             }
           },
           {
@@ -1188,6 +1288,11 @@ You have these tools to control the map visualization:
 
 0. **set_city({ id })** - Switch the active city (call before discussing a different city)
 
+0b. **set_layout({ mode })** - Switch split-screen layout
+   - "intro": persona 70% / map 30% (city introduction)
+   - "tour": persona 30% / map 70% (landmark touring)
+   - "wrapup": persona 70% / map 30% (closing summary)
+
 1. **fly_to_landmark({ id, zoom })** - Animate map to a landmark
    - Call this RIGHT BEFORE you mention a landmark for the first time
    - Example: "Let me show you the Medina..." [CALL fly_to_landmark({ id: "medina" })]
@@ -1204,6 +1309,9 @@ You have these tools to control the map visualization:
    - Call after show_landmark_panel when you want to highlight visuals
 
 ## Conversation Flow
+At the start of a city intro, call set_layout({ mode: "intro" }). While touring landmarks, call
+set_layout({ mode: "tour" }). When you wrap up, call set_layout({ mode: "wrapup" }).
+
 For each landmark you discuss:
 1. Call fly_to_landmark({ id: "landmark-id", zoom: 18 })
 2. Describe the landmark (2-3 sentences while map animates)
@@ -1364,6 +1472,32 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
           ...normalizedArgs,
           zoom: clampZoom(debugZoomRef.current, 16, 20)
         };
+      }
+
+      if (toolName === 'set_layout') {
+        const nextMode = normalizeLayoutMode(normalizedArgs.mode);
+        if (nextMode) {
+          setLayoutMode(nextMode);
+        }
+
+        const existingQueue = debugMetricsRef.current.toolCallQueue;
+        updateDebugMetrics({
+          lastEvent: {
+            type: 'TOOL_CALL',
+            timestamp: toolCallStart,
+            data: event
+          },
+          toolCallQueue: [
+            ...existingQueue,
+            {
+              name: toolName,
+              args: normalizedArgs,
+              timestamp: toolCallStart,
+              status: 'complete'
+            }
+          ]
+        });
+        return;
       }
 
       if (toolName === 'set_city') {
@@ -1720,7 +1854,7 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
   }
 
   return (
-    <div className="travel-agent-container">
+    <div className={`travel-agent-container layout-${layoutMode}`}>
       <div className="persona-container">
         <video id="anam-video" autoPlay playsInline className="persona-video" />
 
@@ -1850,6 +1984,36 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
               </option>
             ))}
           </select>
+          <div className="media-mode-row">
+            <span className="city-picker-label">Media</span>
+            <div className="media-mode-toggle" role="group" aria-label="Media mode">
+              <button
+                className={`media-mode-button ${mediaMode === 'curated' ? 'media-mode-active' : ''}`}
+                onClick={() => setMediaMode('curated')}
+                type="button"
+              >
+                Curated
+              </button>
+              <button
+                className={`media-mode-button ${mediaMode === 'live' ? 'media-mode-active' : ''}`}
+                onClick={() => setMediaMode('live')}
+                type="button"
+              >
+                Live
+              </button>
+            </div>
+          </div>
+          <div className="media-preview-row">
+            <span className="city-picker-label">Preview</span>
+            <div className="media-preview-buttons" role="group" aria-label="Media preview">
+              <button className="media-preview-button" onClick={() => handleDebugMedia('photo')}>
+                Photos
+              </button>
+              <button className="media-preview-button" onClick={() => handleDebugMedia('video')}>
+                Video
+              </button>
+            </div>
+          </div>
           <div className="city-picker-supported">Supported: {supportedCitiesLabel}</div>
           <div className="city-picker-hint">Say: "Switch to Istanbul"</div>
         </div>
@@ -2032,6 +2196,13 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
                   <button className="media-button" onClick={() => advanceMediaVideo(1)} aria-label="Next video">
                     {'>'}
                   </button>
+                  <button
+                    className="media-button media-skip-button"
+                    onClick={() => advanceMediaVideo(1)}
+                    aria-label="Skip to next video"
+                  >
+                    Skip &gt;
+                  </button>
                 </div>
               )}
             </motion.div>
@@ -2070,7 +2241,7 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
 
       {!DEMO_MODE && (
         <div className="debug-hint">
-          Press <kbd>Ctrl+Shift+D</kbd> for Debug HUD · <kbd>Ctrl+Shift+M</kbd> to toggle controls
+          Press <kbd>Ctrl+Shift+D</kbd> for Debug HUD; <kbd>Ctrl+Shift+M</kbd> to toggle controls
         </div>
       )}
 
@@ -2134,14 +2305,6 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
           <div className="manual-row">
             <button className="manual-button" onClick={runToolTest}>
               Test Tool Call
-            </button>
-          </div>
-          <div className="manual-row">
-            <button className="manual-button" onClick={() => handleDebugMedia('photo')}>
-              Show Media (Photos)
-            </button>
-            <button className="manual-button manual-button-secondary" onClick={() => handleDebugMedia('video')}>
-              Show Media (Video)
             </button>
           </div>
           {manualError && <div className="manual-error">{manualError}</div>}

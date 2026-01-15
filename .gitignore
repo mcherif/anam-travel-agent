@@ -10,3 +10,4 @@
 **/.vite/
 **/.cache/
 **/tmp/
+docs/*.pptx

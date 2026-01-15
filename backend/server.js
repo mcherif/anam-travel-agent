@@ -41,10 +41,50 @@ const PEXELS_LICENSE = {
   name: 'Pexels License',
   url: 'https://www.pexels.com/license/'
 };
+
+const PEOPLE_EXCLUDE_TERMS = [
+  'people',
+  'person',
+  'man',
+  'woman',
+  'men',
+  'women',
+  'boy',
+  'girl',
+  'child',
+  'portrait',
+  'face',
+  'faces',
+  'selfie',
+  'crowd',
+  'human',
+  'craftsman',
+  'artisan',
+  'vendor',
+  'seller'
+];
 const PHOTO_CACHE_TTL_MS = 1000 * 60 * 10;
 const photoCache = new Map();
 const VIDEO_CACHE_TTL_MS = 1000 * 60 * 10;
 const videoCache = new Map();
+
+const parseTerms = (value) =>
+  String(value || '')
+    .split(',')
+    .map((term) => term.trim().toLowerCase())
+    .filter(Boolean);
+
+const isTruthyParam = (value) => {
+  const normalized = String(value || '').trim().toLowerCase();
+  return normalized === 'true' || normalized === '1' || normalized === 'yes';
+};
+
+const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const buildTermMatchers = (terms) =>
+  terms.map((term) => new RegExp(`\\b${escapeRegExp(term)}\\b`, 'i'));
+
+const matchesAnyTerm = (text, matchers) => matchers.some((matcher) => matcher.test(text));
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
@@ -96,8 +136,18 @@ app.get('/api/photos', async (req, res) => {
     const perPageRaw = Number(req.query.perPage || req.query.per_page || 8);
     const perPage = Number.isFinite(perPageRaw) ? Math.min(Math.max(perPageRaw, 1), 12) : 8;
     const providerParam = typeof req.query.provider === 'string' ? req.query.provider.toLowerCase() : '';
+    const excludeParam = typeof req.query.exclude === 'string' ? req.query.exclude : '';
+    const excludePeople = isTruthyParam(req.query.excludePeople);
+    const excludeTerms = [
+      ...new Set([
+        ...parseTerms(excludeParam),
+        ...(excludePeople ? PEOPLE_EXCLUDE_TERMS : [])
+      ])
+    ];
+    const excludeMatchers = buildTermMatchers(excludeTerms);
     const provider = providerParam || PHOTO_PROVIDER;
-    const cacheKey = `${provider}|${query.toLowerCase()}|${perPage}`;
+    const excludeKey = excludeTerms.slice().sort().join('|');
+    const cacheKey = `${provider}|${query.toLowerCase()}|${perPage}|exclude:${excludeKey}`;
     const cached = photoCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < PHOTO_CACHE_TTL_MS) {
       res.json(cached.payload);
@@ -120,7 +170,22 @@ app.get('/api/photos', async (req, res) => {
       }
 
       const results = Array.isArray(data.results) ? data.results : [];
-      return results
+      const filteredResults =
+        excludeMatchers.length > 0
+          ? results.filter((photo) => {
+              const tags = Array.isArray(photo.tags)
+                ? photo.tags
+                    .map((tag) => (typeof tag === 'string' ? tag : tag.name))
+                    .filter(Boolean)
+                    .join(' ')
+                : '';
+              const searchText = [photo.title, photo.creator, tags, photo.url, photo.foreign_landing_url]
+                .filter(Boolean)
+                .join(' ');
+              return !matchesAnyTerm(searchText, excludeMatchers);
+            })
+          : results;
+      return filteredResults
         .map((photo) => {
           const imageUrl = photo.url || photo.thumbnail;
           if (!imageUrl) {
@@ -160,7 +225,16 @@ app.get('/api/photos', async (req, res) => {
         throw new Error('Failed to fetch Pexels photos');
       }
       const results = Array.isArray(data.photos) ? data.photos : [];
-      return results
+      const filteredResults =
+        excludeMatchers.length > 0
+          ? results.filter((photo) => {
+              const searchText = [photo.alt, photo.photographer, photo.url]
+                .filter(Boolean)
+                .join(' ');
+              return !matchesAnyTerm(searchText, excludeMatchers);
+            })
+          : results;
+      return filteredResults
         .map((photo) => {
           const imageUrl = photo.src?.large || photo.src?.medium || photo.src?.original;
           if (!imageUrl) {
@@ -229,16 +303,18 @@ app.get('/api/videos', async (req, res) => {
     const providerParam = typeof req.query.provider === 'string' ? req.query.provider.toLowerCase() : '';
     const includeParam = typeof req.query.include === 'string' ? req.query.include : '';
     const excludeParam = typeof req.query.exclude === 'string' ? req.query.exclude : '';
-    const includeTerms = includeParam
-      .split(',')
-      .map((term) => term.trim().toLowerCase())
-      .filter(Boolean);
-    const excludeTerms = excludeParam
-      .split(',')
-      .map((term) => term.trim().toLowerCase())
-      .filter(Boolean);
+    const excludePeople = isTruthyParam(req.query.excludePeople);
+    const includeTerms = parseTerms(includeParam);
+    const excludeTerms = [
+      ...new Set([
+        ...parseTerms(excludeParam),
+        ...(excludePeople ? PEOPLE_EXCLUDE_TERMS : [])
+      ])
+    ];
     const provider = providerParam || VIDEO_PROVIDER;
-    const cacheKey = `${provider}|${query.toLowerCase()}|${perPage}`;
+    const includeKey = includeTerms.slice().sort().join('|');
+    const excludeKey = excludeTerms.slice().sort().join('|');
+    const cacheKey = `${provider}|${query.toLowerCase()}|${perPage}|include:${includeKey}|exclude:${excludeKey}`;
     const cached = videoCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < VIDEO_CACHE_TTL_MS) {
       res.json(cached.payload);
@@ -271,18 +347,22 @@ app.get('/api/videos', async (req, res) => {
     }
 
     const results = Array.isArray(data.videos) ? data.videos : [];
-    const filteredResults = results.filter((video) => {
-      const url = String(video.url || '').toLowerCase();
-      const author = String(video.user?.name || '').toLowerCase();
-      if (excludeTerms.some((term) => url.includes(term) || author.includes(term))) {
-        return false;
-      }
-      if (includeTerms.length === 0) {
-        return true;
-      }
-      return includeTerms.some((term) => url.includes(term) || author.includes(term));
-    });
-    const usableResults = includeTerms.length > 0 && filteredResults.length === 0 ? results : filteredResults;
+    const includeMatchers = buildTermMatchers(includeTerms);
+    const excludeMatchers = buildTermMatchers(excludeTerms);
+    const buildSearchText = (video) => {
+      const tags = Array.isArray(video.tags) ? video.tags.join(' ') : '';
+      return [video.url, video.user?.name, tags].filter(Boolean).join(' ');
+    };
+    const withoutExcluded =
+      excludeMatchers.length > 0
+        ? results.filter((video) => !matchesAnyTerm(buildSearchText(video), excludeMatchers))
+        : results;
+    const filteredResults =
+      includeMatchers.length > 0
+        ? withoutExcluded.filter((video) => matchesAnyTerm(buildSearchText(video), includeMatchers))
+        : withoutExcluded;
+    const usableResults =
+      includeMatchers.length > 0 && filteredResults.length === 0 ? withoutExcluded : filteredResults;
     const videos = usableResults
       .map((video) => {
         const files = Array.isArray(video.video_files) ? video.video_files : [];
