@@ -518,6 +518,23 @@
   z-index: 1000;
 }
 
+.landmark-controls {
+  position: sticky;
+  bottom: 16px;
+  margin: 16px 20px 20px;
+  z-index: 5;
+}
+
+.city-overlay.city-overlay-inline {
+  position: relative;
+  bottom: auto;
+  left: auto;
+  min-width: 0;
+  width: 100%;
+  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.18);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+}
+
 .landmark-image-wrap {
   position: relative;
 }

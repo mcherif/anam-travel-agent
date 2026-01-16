@@ -24,7 +24,7 @@ type ToolCallEntry = {
 
 type ImageItem = {
   url: string;
-  source: 'local' | 'openverse';
+  source: 'local' | 'openverse' | 'pexels';
   title?: string;
   author?: string;
   provider?: string;
@@ -115,6 +115,20 @@ const applyEnglishLabels = (map: mapboxgl.Map) => {
 const clampZoom = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
 const normalizeText = (value: string) => value.trim().toLowerCase();
+
+const interleaveMedia = <T,>(primary: T[], secondary: T[]) => {
+  const results: T[] = [];
+  const maxLength = Math.max(primary.length, secondary.length);
+  for (let i = 0; i < maxLength; i += 1) {
+    if (primary[i]) {
+      results.push(primary[i]);
+    }
+    if (secondary[i]) {
+      results.push(secondary[i]);
+    }
+  }
+  return results;
+};
 
 const slugifyText = (value: string) =>
   normalizeText(value)
@@ -489,10 +503,10 @@ const TravelAgentDemo = () => {
     return urls.map((url) => ({ url, source: 'local' }));
   }, [currentLandmark]);
   const combinedImages = useMemo<ImageItem[]>(() => {
-    if (liveImages.length > 0) {
-      return [...liveImages, ...localImages];
+    if (liveImages.length > 0 && localImages.length > 0) {
+      return interleaveMedia(localImages, liveImages);
     }
-    return localImages;
+    return liveImages.length > 0 ? liveImages : localImages;
   }, [liveImages, localImages]);
   const activeLandmarkImage = combinedImages[activeImageIndex] ?? localImages[0];
   const mediaLandmark = mediaOverlay.landmarkId
@@ -503,13 +517,16 @@ const TravelAgentDemo = () => {
   const liveMediaEnabled = mediaMode === 'live';
   const livePhotoEnabled = liveMediaEnabled && LIVE_PHOTOS;
   const streetViewEnabled = liveMediaEnabled;
+  const curatedVideos = useMemo<VideoItem[]>(
+    () => (mediaVideoUrl ? [{ url: mediaVideoUrl, provider: 'local' }] : []),
+    [mediaVideoUrl]
+  );
   const videoItems = useMemo<VideoItem[]>(() => {
-    const items = [...liveVideos];
-    if (mediaVideoUrl) {
-      items.unshift({ url: mediaVideoUrl, provider: 'local' });
+    if (liveVideos.length > 0 && curatedVideos.length > 0) {
+      return interleaveMedia(curatedVideos, liveVideos);
     }
-    return items;
-  }, [liveVideos, mediaVideoUrl]);
+    return liveVideos.length > 0 ? liveVideos : curatedVideos;
+  }, [liveVideos, curatedVideos]);
   const activeVideo = videoItems[activeVideoIndex];
   const hasVideo = videoItems.length > 0;
   const showStreetViewDiagnostics = !DEMO_MODE && debugVisible;
@@ -980,16 +997,20 @@ const TravelAgentDemo = () => {
         const photos =
           data.photos
             ?.filter((photo) => typeof photo.imageUrl === 'string')
-            .map((photo) => ({
-              url: photo.imageUrl as string,
-              source: 'openverse' as const,
-              title: photo.title,
-              author: photo.ownerName,
-              provider: photo.provider,
-              pageUrl: photo.pageUrl,
-              license: photo.license,
-              licenseUrl: photo.licenseUrl
-            })) || [];
+            .map((photo) => {
+              const providerName = typeof photo.provider === 'string' ? photo.provider : '';
+              const source = providerName.toLowerCase().includes('pexels') ? 'pexels' : 'openverse';
+              return {
+                url: photo.imageUrl as string,
+                source,
+                title: photo.title,
+                author: photo.ownerName,
+                provider: photo.provider,
+                pageUrl: photo.pageUrl,
+                license: photo.license,
+                licenseUrl: photo.licenseUrl
+              };
+            }) || [];
 
         setLiveImages(photos);
         setLivePhotoStatus(photos.length > 0 ? 'ready' : 'idle');
@@ -2027,57 +2048,6 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
 
       <div className="map-container">
         <div ref={mapContainer} className="map" />
-        {isConnected && (
-          <div className="city-overlay">
-            <label className="city-picker-label" htmlFor="city-picker-overlay">
-              City
-            </label>
-            <select
-              id="city-picker-overlay"
-              className="city-picker-select"
-              value={selectedCity}
-              onChange={(event) => switchCity(event.target.value as CityId)}
-            >
-              {cityOptions.map((city) => (
-                <option key={city.id} value={city.id}>
-                  {city.name}
-                </option>
-              ))}
-            </select>
-            <div className="media-mode-row">
-              <span className="city-picker-label">Media</span>
-              <div className="media-mode-toggle" role="group" aria-label="Media mode">
-                <button
-                  className={`media-mode-button ${mediaMode === 'curated' ? 'media-mode-active' : ''}`}
-                  onClick={() => setMediaMode('curated')}
-                  type="button"
-                >
-                  Curated
-                </button>
-                <button
-                  className={`media-mode-button ${mediaMode === 'live' ? 'media-mode-active' : ''}`}
-                  onClick={() => setMediaMode('live')}
-                  type="button"
-                >
-                  Live
-                </button>
-              </div>
-            </div>
-            <div className="media-preview-row">
-              <span className="city-picker-label">Preview</span>
-              <div className="media-preview-buttons" role="group" aria-label="Media preview">
-                <button className="media-preview-button" onClick={() => handleDebugMedia('photo')}>
-                  Photos
-                </button>
-                <button className="media-preview-button" onClick={() => handleDebugMedia('video')}>
-                  Video
-                </button>
-              </div>
-            </div>
-            <div className="city-picker-supported">Supported: {supportedCitiesLabel}</div>
-            <div className="city-picker-hint">Say: "Switch to Istanbul"</div>
-          </div>
-        )}
 
         <AnimatePresence>
           {currentLandmark && (
@@ -2114,15 +2084,15 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
               {LIVE_PHOTOS && livePhotoStatus === 'loading' && (
                 <div className="landmark-photo-status">Loading live photos...</div>
               )}
-              {activeLandmarkImage?.source === 'openverse' && activeLandmarkImage.pageUrl && (
+              {activeLandmarkImage?.source !== 'local' && activeLandmarkImage.pageUrl && (
                 <div className="landmark-photo-credit">
                   Photo:{' '}
                   <a href={activeLandmarkImage.pageUrl} target="_blank" rel="noreferrer">
-                    {activeLandmarkImage.title || 'Openverse'}
+                    {activeLandmarkImage.title || activeLandmarkImage.provider || 'Source'}
                   </a>
                   {activeLandmarkImage.author && ` by ${activeLandmarkImage.author}`}
                   {activeLandmarkImage.provider && ` - ${activeLandmarkImage.provider}`}
-                  {activeLandmarkImage.license &&
+                  {activeLandmarkImage.source === 'openverse' && activeLandmarkImage.license &&
                     ` (${activeLandmarkImage.license})`}
                 </div>
               )}
@@ -2176,6 +2146,60 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
                           : 'Street View failed to load. Check the console/network for Mapillary API errors.'}
                       </p>
                     )}
+                </div>
+              )}
+
+              {isConnected && (
+                <div className="landmark-controls">
+                  <div className="city-overlay city-overlay-inline">
+                    <label className="city-picker-label" htmlFor="city-picker-overlay">
+                      City
+                    </label>
+                    <select
+                      id="city-picker-overlay"
+                      className="city-picker-select"
+                      value={selectedCity}
+                      onChange={(event) => switchCity(event.target.value as CityId)}
+                    >
+                      {cityOptions.map((city) => (
+                        <option key={city.id} value={city.id}>
+                          {city.name}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="media-mode-row">
+                      <span className="city-picker-label">Media</span>
+                      <div className="media-mode-toggle" role="group" aria-label="Media mode">
+                        <button
+                          className={`media-mode-button ${mediaMode === 'curated' ? 'media-mode-active' : ''}`}
+                          onClick={() => setMediaMode('curated')}
+                          type="button"
+                        >
+                          Curated
+                        </button>
+                        <button
+                          className={`media-mode-button ${mediaMode === 'live' ? 'media-mode-active' : ''}`}
+                          onClick={() => setMediaMode('live')}
+                          type="button"
+                        >
+                          Live
+                        </button>
+                      </div>
+                    </div>
+                    <div className="media-preview-row">
+                      <span className="city-picker-label">Preview</span>
+                      <div className="media-preview-buttons" role="group" aria-label="Media preview">
+                        <button className="media-preview-button" onClick={() => handleDebugMedia('photo')}>
+                          Photos
+                        </button>
+                        <button className="media-preview-button" onClick={() => handleDebugMedia('video')}>
+                          Video
+                        </button>
+                      </div>
+                    </div>
+                    <div className="city-picker-supported">Supported: {supportedCitiesLabel}</div>
+                    <div className="city-picker-hint">Say: "Switch to Istanbul"</div>
+                  </div>
                 </div>
               )}
             </motion.div>
@@ -2275,6 +2299,60 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
                   >
                     Skip &gt;
                   </button>
+                </div>
+              )}
+
+              {isConnected && (
+                <div className="landmark-controls">
+                  <div className="city-overlay city-overlay-inline">
+                    <label className="city-picker-label" htmlFor="city-picker-overlay">
+                      City
+                    </label>
+                    <select
+                      id="city-picker-overlay"
+                      className="city-picker-select"
+                      value={selectedCity}
+                      onChange={(event) => switchCity(event.target.value as CityId)}
+                    >
+                      {cityOptions.map((city) => (
+                        <option key={city.id} value={city.id}>
+                          {city.name}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="media-mode-row">
+                      <span className="city-picker-label">Media</span>
+                      <div className="media-mode-toggle" role="group" aria-label="Media mode">
+                        <button
+                          className={`media-mode-button ${mediaMode === 'curated' ? 'media-mode-active' : ''}`}
+                          onClick={() => setMediaMode('curated')}
+                          type="button"
+                        >
+                          Curated
+                        </button>
+                        <button
+                          className={`media-mode-button ${mediaMode === 'live' ? 'media-mode-active' : ''}`}
+                          onClick={() => setMediaMode('live')}
+                          type="button"
+                        >
+                          Live
+                        </button>
+                      </div>
+                    </div>
+                    <div className="media-preview-row">
+                      <span className="city-picker-label">Preview</span>
+                      <div className="media-preview-buttons" role="group" aria-label="Media preview">
+                        <button className="media-preview-button" onClick={() => handleDebugMedia('photo')}>
+                          Photos
+                        </button>
+                        <button className="media-preview-button" onClick={() => handleDebugMedia('video')}>
+                          Video
+                        </button>
+                      </div>
+                    </div>
+                    <div className="city-picker-supported">Supported: {supportedCitiesLabel}</div>
+                    <div className="city-picker-hint">Say: "Switch to Istanbul"</div>
+                  </div>
                 </div>
               )}
             </motion.div>

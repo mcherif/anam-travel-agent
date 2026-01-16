@@ -48,16 +48,15 @@
           "Zitouna Mosque - spiritual heart of the medina",
           "Traditional souks and markets"
         ],
-        "imageUrl": "/images/medina-tunis-souk-attarine.jpg",
+        "imageUrl": "/images/medina/medina-tunis-souk-attarine.jpg",
         "imageUrls": [
-          "/images/medina-tunis-souk-attarine.jpg",
-          "/images/medina-tunis.jpg",
-          "/images/medina-tunis-street-1.jpg",
-          "/images/medina-tunis-street-3.jpg",
-          "/images/medina-tunis-door-1.jpg",
-          "/images/medina-tunis-door-2.jpg",
-          "/images/medina-tunis-souk-3.jpg",
-          "/images/medina-tunis-souk-chawachine-day.jpg"
+          "/images/medina/medina-tunis-souk-attarine.jpg",
+          "/images/medina/medina-tunis-street-1.jpg",
+          "/images/medina/medina-tunis-street-3.jpg",
+          "/images/medina/medina-tunis-door-1.jpg",
+          "/images/medina/medina-tunis-door-2.jpg",
+          "/images/medina/medina-tunis-souk-3.jpg",
+          "/images/medina/medina-tunis-souk-chawachine-day.jpg"
         ],
         "zoom": 18,
         "videoUrl": "https://videos.pexels.com/video-files/29273061/12626624_360_640_30fps.mp4"
@@ -84,10 +83,10 @@
           "Traditional courtyard and prayer hall",
           "Center of learning for centuries"
         ],
-        "imageUrl": "/images/zitouna-mosque.jpg",
+        "imageUrl": "/images/zitouna-mosque/zitouna-mosque.jpg",
         "imageUrls": [
-          "/images/zitouna-mosque.jpg",
-          "/images/zitouna-mosque-interior.jpg"
+          "/images/zitouna-mosque/zitouna-mosque.jpg",
+          "/images/zitouna-mosque/zitouna-mosque-interior.jpg"
         ],
         "zoom": 18.5,
         "videoUrl": "https://videos.pexels.com/video-files/18468232/18468232-sd_426_240_25fps.mp4"
@@ -114,7 +113,7 @@
           "Byrsa Hill - ancient citadel",
           "Tophet - ancient cemetery"
         ],
-        "imageUrl": "/images/carthage-ruins.jpg",
+        "imageUrl": "/images/carthage/carthage-ruins.jpg",
         "zoom": 18,
         "videoUrl": "https://videos.pexels.com/video-files/28215912/12330565_360_640_30fps.mp4"
       },
@@ -139,7 +138,7 @@
           "Punic and early Christian artifacts",
           "Islamic art and manuscripts"
         ],
-        "imageUrl": "/images/bardo-museum.jpg",
+        "imageUrl": "/images/bardo/bardo-museum.jpg",
         "zoom": 18,
         "videoUrl": "https://videos.pexels.com/video-files/29273061/12626624_360_640_30fps.mp4"
       },
@@ -191,13 +190,14 @@
           "Marina promenade and Mediterranean views",
           "Artists and galleries tucked into alleys"
         ],
-        "imageUrl": "/images/sidi-bou-said.jpg",
+        "imageUrl": "/images/sidi-bou-said/sidi-bou-said-marina-pexels-20190776.jpg",
         "imageUrls": [
-          "/images/sidi-bou-said.jpg",
-          "/images/sidi-bou-said-street.jpg",
-          "/images/sidi-bou-said-ennejma-ezzahra.jpg",
-          "/images/sidi-bou-said-ennejma-ezzahra-interior.jpg",
-          "/images/sidi-bou-said-hill-view-2.jpg"
+          "/images/sidi-bou-said/sidi-bou-said-marina-pexels-20190776.jpg",
+          "/images/sidi-bou-said/sidi-bou-said.jpg",
+          "/images/sidi-bou-said/sidi-bou-said-street.jpg",
+          "/images/sidi-bou-said/sidi-bou-said-ennejma-ezzahra.jpg",
+          "/images/sidi-bou-said/sidi-bou-said-ennejma-ezzahra-interior.jpg",
+          "/images/sidi-bou-said/sidi-bou-said-hill-view-2.jpg"
         ],
         "zoom": 18,
         "videoUrl": "https://videos.pexels.com/video-files/29273061/12626624_360_640_30fps.mp4"
@@ -237,7 +237,7 @@
           "Byzantine and Ottoman architectural layers",
           "UNESCO-listed Historic Areas of Istanbul"
         ],
-        "imageUrl": "/images/istanbul-hagia-sophia.jpg",
+        "imageUrl": "/images/hagia-sophia/istanbul-hagia-sophia.jpg",
         "zoom": 18.7,
         "videoUrl": "https://videos.pexels.com/video-files/6350082/6350082-sd_960_540_30fps.mp4"
       },
@@ -262,7 +262,7 @@
           "Courtyard and cascading domes",
           "Landmark of the old city skyline"
         ],
-        "imageUrl": "/images/istanbul-blue-mosque.jpg",
+        "imageUrl": "/images/blue-mosque/istanbul-blue-mosque.jpg",
         "zoom": 18.7,
         "videoUrl": "https://videos.pexels.com/video-files/18748556/18748556-sd_640_360_30fps.mp4"
       },
@@ -287,7 +287,7 @@
           "Treasury and relics collections",
           "Views over the Bosphorus"
         ],
-        "imageUrl": "/images/istanbul-topkapi-palace.jpg",
+        "imageUrl": "/images/topkapi-palace/istanbul-topkapi-palace.jpg",
         "zoom": 18.6,
         "videoUrl": "https://videos.pexels.com/video-files/19302190/19302190-hd_1080_1920_30fps.mp4"
       },
@@ -312,7 +312,7 @@
           "Stone tower built by Genoese settlers",
           "Night views of the Bosphorus"
         ],
-        "imageUrl": "/images/istanbul-galata-tower.jpg",
+        "imageUrl": "/images/galata-tower/istanbul-galata-tower.jpg",
         "zoom": 18.5,
         "videoUrl": "https://videos.pexels.com/video-files/31821993/13557768_360_640_60fps.mp4"
       }
