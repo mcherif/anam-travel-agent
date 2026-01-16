@@ -1941,47 +1941,79 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
 
         {!isConnected && (
           <div className="start-panel">
-            <div className="city-picker">
-            <label className="city-picker-label" htmlFor="city-picker-start">
-              Choose a city
-            </label>
-            <select
-              id="city-picker-start"
-              className="city-picker-select"
-              value={selectedCity}
-              onChange={(event) => switchCity(event.target.value as CityId)}
-            >
-              {cityOptions.map((city) => (
-                <option key={city.id} value={city.id}>
-                  {city.name}
-                </option>
-              ))}
-            </select>
-            <label className="city-picker-label" htmlFor="camera-picker-start">
-              Camera
-            </label>
-            <select
-              id="camera-picker-start"
-              className="city-picker-select"
-              value={selectedVideoDeviceId}
-              onChange={(event) => setSelectedVideoDeviceId(event.target.value)}
-            >
-              <option value="default">Default camera</option>
-              {videoDevices.map((device) => (
-                <option key={device.deviceId} value={device.deviceId}>
-                  {device.label || `Camera ${device.deviceId.slice(0, 6)}`}
-                </option>
-              ))}
-            </select>
-            <div className="city-picker-supported">Supported: {supportedCitiesLabel}</div>
-            <div className="city-picker-hint">Or say: "Switch to Istanbul"</div>
+            <div className="launch-card">
+              <div className="launch-header">
+                <span className="launch-eyebrow">Anam Travel Assistant</span>
+                <h2 className="launch-title">Choose a city to begin</h2>
+                <p className="launch-subtitle">Pick your camera and media mode before starting.</p>
+              </div>
+              <div className="launch-form">
+                <div className="launch-field">
+                  <label className="city-picker-label" htmlFor="city-picker-start">
+                    City
+                  </label>
+                  <select
+                    id="city-picker-start"
+                    className="city-picker-select"
+                    value={selectedCity}
+                    onChange={(event) => switchCity(event.target.value as CityId)}
+                  >
+                    {cityOptions.map((city) => (
+                      <option key={city.id} value={city.id}>
+                        {city.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="launch-field">
+                  <label className="city-picker-label" htmlFor="camera-picker-start">
+                    Camera
+                  </label>
+                  <select
+                    id="camera-picker-start"
+                    className="city-picker-select"
+                    value={selectedVideoDeviceId}
+                    onChange={(event) => setSelectedVideoDeviceId(event.target.value)}
+                  >
+                    <option value="default">Default camera</option>
+                    {videoDevices.map((device) => (
+                      <option key={device.deviceId} value={device.deviceId}>
+                        {device.label || `Camera ${device.deviceId.slice(0, 6)}`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="launch-field">
+                  <span className="city-picker-label">Media</span>
+                  <div className="media-mode-toggle" role="group" aria-label="Media mode">
+                    <button
+                      className={`media-mode-button ${mediaMode === 'curated' ? 'media-mode-active' : ''}`}
+                      onClick={() => setMediaMode('curated')}
+                      type="button"
+                    >
+                      Curated
+                    </button>
+                    <button
+                      className={`media-mode-button ${mediaMode === 'live' ? 'media-mode-active' : ''}`}
+                      onClick={() => setMediaMode('live')}
+                      type="button"
+                    >
+                      Live
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div className="launch-footer">
+                <div className="city-picker-supported">Supported: {supportedCitiesLabel}</div>
+                <div className="city-picker-hint">Say: "Switch to Istanbul"</div>
+              </div>
+              <button onClick={startConversation} className="start-button">
+                Start Your Journey
+              </button>
+            </div>
+            {startupError && <div className="manual-error">{startupError}</div>}
           </div>
-          <button onClick={startConversation} className="start-button">
-            Start Your Journey
-          </button>
-          {startupError && <div className="manual-error">{startupError}</div>}
-        </div>
-      )}
+        )}
 
         {debugMetrics.personaState === 'speaking' && !showInterrupted && (
           <div className="speaking-indicator">
@@ -1993,55 +2025,57 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
 
       <div className="map-container">
         <div ref={mapContainer} className="map" />
-        <div className="city-overlay">
-          <label className="city-picker-label" htmlFor="city-picker-overlay">
-            City
-          </label>
-          <select
-            id="city-picker-overlay"
-            className="city-picker-select"
-            value={selectedCity}
-            onChange={(event) => switchCity(event.target.value as CityId)}
-          >
-            {cityOptions.map((city) => (
-              <option key={city.id} value={city.id}>
-                {city.name}
-              </option>
-            ))}
-          </select>
-          <div className="media-mode-row">
-            <span className="city-picker-label">Media</span>
-            <div className="media-mode-toggle" role="group" aria-label="Media mode">
-              <button
-                className={`media-mode-button ${mediaMode === 'curated' ? 'media-mode-active' : ''}`}
-                onClick={() => setMediaMode('curated')}
-                type="button"
-              >
-                Curated
-              </button>
-              <button
-                className={`media-mode-button ${mediaMode === 'live' ? 'media-mode-active' : ''}`}
-                onClick={() => setMediaMode('live')}
-                type="button"
-              >
-                Live
-              </button>
+        {isConnected && (
+          <div className="city-overlay">
+            <label className="city-picker-label" htmlFor="city-picker-overlay">
+              City
+            </label>
+            <select
+              id="city-picker-overlay"
+              className="city-picker-select"
+              value={selectedCity}
+              onChange={(event) => switchCity(event.target.value as CityId)}
+            >
+              {cityOptions.map((city) => (
+                <option key={city.id} value={city.id}>
+                  {city.name}
+                </option>
+              ))}
+            </select>
+            <div className="media-mode-row">
+              <span className="city-picker-label">Media</span>
+              <div className="media-mode-toggle" role="group" aria-label="Media mode">
+                <button
+                  className={`media-mode-button ${mediaMode === 'curated' ? 'media-mode-active' : ''}`}
+                  onClick={() => setMediaMode('curated')}
+                  type="button"
+                >
+                  Curated
+                </button>
+                <button
+                  className={`media-mode-button ${mediaMode === 'live' ? 'media-mode-active' : ''}`}
+                  onClick={() => setMediaMode('live')}
+                  type="button"
+                >
+                  Live
+                </button>
+              </div>
             </div>
-          </div>
-          <div className="media-preview-row">
-            <span className="city-picker-label">Preview</span>
-            <div className="media-preview-buttons" role="group" aria-label="Media preview">
-              <button className="media-preview-button" onClick={() => handleDebugMedia('photo')}>
-                Photos
-              </button>
-              <button className="media-preview-button" onClick={() => handleDebugMedia('video')}>
-                Video
-              </button>
+            <div className="media-preview-row">
+              <span className="city-picker-label">Preview</span>
+              <div className="media-preview-buttons" role="group" aria-label="Media preview">
+                <button className="media-preview-button" onClick={() => handleDebugMedia('photo')}>
+                  Photos
+                </button>
+                <button className="media-preview-button" onClick={() => handleDebugMedia('video')}>
+                  Video
+                </button>
+              </div>
             </div>
+            <div className="city-picker-supported">Supported: {supportedCitiesLabel}</div>
+            <div className="city-picker-hint">Say: "Switch to Istanbul"</div>
           </div>
-          <div className="city-picker-supported">Supported: {supportedCitiesLabel}</div>
-          <div className="city-picker-hint">Say: "Switch to Istanbul"</div>
-        </div>
+        )}
 
         <AnimatePresence>
           {currentLandmark && (

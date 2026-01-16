@@ -196,38 +196,91 @@
 }
 
 .start-button {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  padding: 20px 40px;
-  font-size: 18px;
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 14px;
   font-weight: 600;
-  color: white;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #ffffff;
+  background: linear-gradient(135deg, #111827 0%, #2563eb 100%);
   border: none;
-  border-radius: 50px;
+  border-radius: 999px;
   cursor: pointer;
-  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
-  transition: all 0.3s ease;
-  z-index: 100;
+  box-shadow: 0 12px 28px rgba(37, 99, 235, 0.35);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .start-button:hover {
-  transform: translate(-50%, -50%) scale(1.05);
-  box-shadow: 0 15px 40px rgba(102, 126, 234, 0.6);
+  transform: translateY(-1px);
+  box-shadow: 0 16px 30px rgba(37, 99, 235, 0.45);
 }
 
 .start-panel {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 120;
+}
+
+.launch-card {
+  width: min(360px, 92%);
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 8px;
-  z-index: 100;
+  gap: 14px;
+  padding: 18px 18px 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(8px);
+}
+
+.launch-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+
+.launch-eyebrow {
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #64748b;
+  font-weight: 700;
+}
+
+.launch-title {
+  margin: 0;
+  font-size: 20px;
+  color: #0f172a;
+}
+
+.launch-subtitle {
+  margin: 0;
+  font-size: 12px;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.launch-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.launch-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.launch-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .city-picker {
@@ -263,15 +316,6 @@
 .city-picker-supported {
   font-size: 12px;
   color: #475569;
-}
-
-.start-panel .start-button {
-  position: static;
-  transform: none;
-}
-
-.start-panel .start-button:hover {
-  transform: scale(1.05);
 }
 
 .speaking-indicator {
