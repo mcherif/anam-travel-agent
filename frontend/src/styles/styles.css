@@ -1,45 +1,56 @@
 /* Travel Agent Demo Styles */
 
 .travel-agent-container {
-  display: grid;
-  grid-template-columns: 400px 1fr;
-  grid-template-rows: 1fr auto;
+  position: relative;
   height: 100vh;
+  overflow: hidden;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  transition: grid-template-columns 0.6s ease;
+  --persona-width: clamp(320px, 42vw, 720px);
+  --persona-height: clamp(520px, 90vh, 980px);
+  --persona-opacity: 0.7;
+  --persona-offset: 16px;
 }
 
 .travel-agent-container.layout-intro {
-  grid-template-columns: 70% 30%;
+  --persona-width: clamp(360px, 52vw, 860px);
+  --persona-height: clamp(560px, 96vh, 1050px);
 }
 
 .travel-agent-container.layout-tour {
-  grid-template-columns: 30% 70%;
+  --persona-width: clamp(300px, 36vw, 640px);
+  --persona-height: clamp(480px, 82vh, 900px);
 }
 
 .travel-agent-container.layout-wrapup {
-  grid-template-columns: 70% 30%;
+  --persona-width: clamp(360px, 52vw, 860px);
+  --persona-height: clamp(560px, 96vh, 1050px);
 }
 
 /* Persona Container */
 .persona-container {
-  position: relative;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
-  border-radius: 0 20px 20px 0;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  position: absolute;
+  top: var(--persona-offset);
+  left: var(--persona-offset);
+  width: var(--persona-width);
+  height: var(--persona-height);
+  background: rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(6px);
+  border-radius: 24px;
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10;
+  z-index: 900;
+  transition: width 0.6s ease, height 0.6s ease;
 }
 
 .persona-video {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  opacity: var(--persona-opacity);
 }
 
 .user-video-preview {
@@ -306,14 +317,14 @@
 
 /* Map Container */
 .map-container {
-  position: relative;
-  grid-column: 2;
-  grid-row: 1 / 3;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
 }
 
 .city-overlay {
   position: absolute;
-  top: 20px;
+  bottom: 20px;
   left: 20px;
   display: flex;
   flex-direction: column;
@@ -1052,32 +1063,18 @@
 /* Responsive Design */
 @media (max-width: 1024px) {
   .travel-agent-container {
-    grid-template-columns: 1fr;
-    grid-template-rows: 300px 1fr auto;
-  }
-
-  .travel-agent-container.layout-intro,
-  .travel-agent-container.layout-tour,
-  .travel-agent-container.layout-wrapup {
-    grid-template-columns: 1fr;
-    grid-template-rows: 300px 1fr auto;
+    --persona-width: calc(100% - 24px);
+    --persona-height: clamp(260px, 46vh, 520px);
+    --persona-offset: 12px;
   }
 
   .persona-container {
-    border-radius: 0 0 20px 20px;
-    grid-column: 1;
-    grid-row: 1;
+    border-radius: 18px;
   }
 
-  .map-container {
-    grid-column: 1;
-    grid-row: 2;
-  }
-
-  .transcript-container {
-    grid-column: 1;
-    grid-row: 3;
-    border-radius: 0;
+  .city-overlay {
+    bottom: 16px;
+    left: 16px;
   }
 
   .landmark-info-panel {

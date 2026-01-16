@@ -136,7 +136,7 @@ export class UIOrchestrator {
 
     const video = document.querySelector('#anam-video') as HTMLVideoElement | null;
     if (video) {
-      video.style.opacity = '1';
+      video.style.opacity = '0.7';
     }
 
     const queue = [...this.state.toolCallQueue];
