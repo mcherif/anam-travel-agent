@@ -65,19 +65,53 @@ try {
     $url = "http://localhost:3000"
     $browserProc = $null
 
-    $edge = Get-Command msedge -ErrorAction SilentlyContinue
-    $chrome = Get-Command chrome -ErrorAction SilentlyContinue
-    $brave = Get-Command brave -ErrorAction SilentlyContinue
-    $firefox = Get-Command firefox -ErrorAction SilentlyContinue
+    function Get-BrowserPath {
+      param(
+        [string[]]$Commands,
+        [string[]]$Paths
+      )
 
-    if ($edge) {
-      $browserProc = Start-Process -FilePath $edge.Path -ArgumentList @("--new-window", "--app=$url") -PassThru
-    } elseif ($chrome) {
-      $browserProc = Start-Process -FilePath $chrome.Path -ArgumentList @("--new-window", "--app=$url") -PassThru
-    } elseif ($brave) {
-      $browserProc = Start-Process -FilePath $brave.Path -ArgumentList @("--new-window", "--app=$url") -PassThru
-    } elseif ($firefox) {
-      $browserProc = Start-Process -FilePath $firefox.Path -ArgumentList @("-new-instance", "-private-window", $url) -PassThru
+      foreach ($command in $Commands) {
+        $resolved = Get-Command $command -ErrorAction SilentlyContinue
+        if ($resolved) {
+          return $resolved.Path
+        }
+      }
+
+      foreach ($candidate in $Paths) {
+        if ($candidate -and (Test-Path -LiteralPath $candidate)) {
+          return $candidate
+        }
+      }
+
+      return $null
+    }
+
+    $edgePath = Get-BrowserPath -Commands @('msedge') -Paths @(
+      "${env:ProgramFiles(x86)}\Microsoft\Edge\Application\msedge.exe",
+      "$env:ProgramFiles\Microsoft\Edge\Application\msedge.exe"
+    )
+    $chromePath = Get-BrowserPath -Commands @('chrome') -Paths @(
+      "${env:ProgramFiles(x86)}\Google\Chrome\Application\chrome.exe",
+      "$env:ProgramFiles\Google\Chrome\Application\chrome.exe"
+    )
+    $bravePath = Get-BrowserPath -Commands @('brave') -Paths @(
+      "${env:ProgramFiles(x86)}\BraveSoftware\Brave-Browser\Application\brave.exe",
+      "$env:ProgramFiles\BraveSoftware\Brave-Browser\Application\brave.exe"
+    )
+    $firefoxPath = Get-BrowserPath -Commands @('firefox') -Paths @(
+      "${env:ProgramFiles(x86)}\Mozilla Firefox\firefox.exe",
+      "$env:ProgramFiles\Mozilla Firefox\firefox.exe"
+    )
+
+    if ($edgePath) {
+      $browserProc = Start-Process -FilePath $edgePath -ArgumentList @("--new-window", "--app=$url") -PassThru
+    } elseif ($chromePath) {
+      $browserProc = Start-Process -FilePath $chromePath -ArgumentList @("--new-window", "--app=$url") -PassThru
+    } elseif ($bravePath) {
+      $browserProc = Start-Process -FilePath $bravePath -ArgumentList @("--new-window", "--app=$url") -PassThru
+    } elseif ($firefoxPath) {
+      $browserProc = Start-Process -FilePath $firefoxPath -ArgumentList @("-new-instance", "-private-window", $url) -PassThru
     } else {
       Start-Process -FilePath $url | Out-Null
       Write-Host "Browser opened. Press Enter to stop both servers."

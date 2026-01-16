@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editable Architecture Diagram</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f8f9fa;
+            overflow: hidden;
+        }
+
+        #header {
+            background: white;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #header h1 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        #header p {
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        button {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            border: 1px solid #cbd5e1;
+            background: white;
+            color: #1e293b;
+        }
+
+        button.primary {
+            background: #10b981;
+            color: white;
+            border: none;
+        }
+
+        button.active {
+            background: #0369a1;
+            color: white;
+        }
+
+        #canvas-container {
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #canvas {
+            width: 100%;
+            height: calc(100vh - 130px);
+            background: #f8f9fa;
+            cursor: default;
+        }
+
+        #canvas.dragging {
+            cursor: grabbing;
+        }
+
+        .box {
+            fill: #ffffff;
+            stroke: #94a3b8;
+            stroke-width: 1.5;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+            cursor: move;
+        }
+
+        .box.selected {
+            stroke: #0369a1;
+            stroke-width: 3;
+        }
+
+        .box.main-box {
+            fill: #e0f2fe;
+            stroke: #0369a1;
+            stroke-width: 2;
+        }
+
+        .box.platform-box {
+            fill: #dbeafe;
+            stroke: #0369a1;
+            stroke-width: 1.5;
+        }
+
+        .box.backend-box {
+            fill: #f1f5f9;
+            stroke: #64748b;
+            stroke-width: 1.5;
+        }
+
+        .box.auxiliary-box {
+            fill: #f8fafc;
+            stroke: #cbd5e1;
+            stroke-width: 1;
+        }
+
+        .text-main {
+            font-family: system-ui;
+            font-size: 14px;
+            fill: #1e293b;
+            font-weight: 600;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        .text-small {
+            font-family: system-ui;
+            font-size: 11px;
+            fill: #64748b;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        .arrow {
+            stroke: #64748b;
+            stroke-width: 1.5;
+            fill: none;
+            marker-end: url(#arrowhead);
+        }
+
+        .arrow-bold {
+            stroke: #0369a1;
+            stroke-width: 2;
+            fill: none;
+            marker-end: url(#arrowhead-bold);
+        }
+
+        .label-bg {
+            fill: rgba(248, 250, 252, 0.95);
+            stroke: #e2e8f0;
+            stroke-width: 1;
+            cursor: move;
+        }
+
+        #footer {
+            background: white;
+            border-top: 1px solid #e2e8f0;
+            padding: 12px 16px;
+            font-size: 12px;
+            color: #64748b;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="header">
+        <div>
+            <h1>Editable Architecture Diagram</h1>
+            <p>Click and drag boxes or labels to reposition • Selected: <strong id="selected-box">none</strong></p>
+        </div>
+        <div class="controls">
+            <button id="auto-position-btn">Auto-position labels</button>
+            <button id="export-btn" class="primary">Download SVG</button>
+        </div>
+    </div>
+
+    <div id="canvas-container">
+        <svg id="canvas" viewBox="0 0 1000 700">
+            <defs>
+                <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                    <polygon points="0 0, 10 3, 0 6" fill="#64748b" />
+                </marker>
+                <marker id="arrowhead-bold" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                    <polygon points="0 0, 10 3, 0 6" fill="#0369a1" />
+                </marker>
+            </defs>
+
+            <text x="500" y="40" text-anchor="middle"
+                style="font-family: system-ui; font-size: 20px; fill: #0f172a; font-weight: 700;">
+                Anam Travel Agent Architecture
+            </text>
+
+            <g id="arrows"></g>
+            <g id="boxes"></g>
+            <g id="labels"></g>
+
+            <text x="50" y="670" style="font-family: system-ui; font-size: 10px; fill: #94a3b8;">
+                Data flow: User requests session → Backend mints token → Browser connects to Anam → Persona calls tools
+                → UI orchestrates map
+            </text>
+        </svg>
+    </div>
+
+    <div id="footer">
+        <strong>Try it:</strong> Drag any box and watch arrows follow • Toggle auto-position to snap labels • Download
+        SVG when ready
+    </div>
+
+    <script>
+        const boxes = {
+            user: { x: 50, y: 280, width: 100, height: 80, title: 'User', subtitle: ['Interacts via', 'browser'], style: 'box' },
+            browser: { x: 300, y: 250, width: 250, height: 140, title: 'Browser UI', subtitle: ['React + Mapbox GL', '+ Anam JS SDK', '• Map orchestration', '• Tool handlers', '• Client-side UI sync'], style: 'main-box' },
+            anam: { x: 700, y: 260, width: 220, height: 120, title: 'Anam Platform', subtitle: ['• LLM (persona logic)', '• TTS (voice synthesis)', '• Video generation', '• Tool call routing'], style: 'platform-box' },
+            backend: { x: 320, y: 520, width: 210, height: 100, title: 'Backend API', subtitle: ['Node.js + Express', '• Session token minting', '• Photo/video search'], style: 'backend-box' },
+            mapbox: { x: 80, y: 100, width: 140, height: 60, title: 'Mapbox Tiles', subtitle: ['Map data + styles'], style: 'auxiliary-box' },
+            mapillary: { x: 280, y: 100, width: 140, height: 60, title: 'Mapillary', subtitle: ['Street-level imagery'], style: 'auxiliary-box' },
+            media: { x: 620, y: 530, width: 180, height: 80, title: 'Media APIs', subtitle: ['• Pexels (photos+video)', '• Openverse (photos)'], style: 'auxiliary-box' }
+        };
+
+        const arrows = [
+            { from: 'user', to: 'browser', style: 'arrow' },
+            { from: 'browser', to: 'backend', style: 'arrow-bold' },
+            { from: 'backend', to: 'anam', style: 'arrow' },
+            { from: 'browser', to: 'anam', style: 'arrow-bold' },
+            { from: 'mapbox', to: 'browser', style: 'arrow' },
+            { from: 'mapillary', to: 'browser', style: 'arrow' },
+            { from: 'media', to: 'backend', style: 'arrow' }
+        ];
+
+        const labels = {
+            userToBrowser: { x: 220, y: 310, text: 'Clicks/voice', arrow: 'user-browser' },
+            browserToBackend: { x: 425, y: 455, text: ['1. Request', 'session token'], arrow: 'browser-backend' },
+            backendToAnam: { x: 570, y: 440, text: ['2. Mint token', '(API key)'], arrow: 'backend-anam' },
+            browserToAnam: { x: 610, y: 300, text: ['3. Start session', '(WebRTC + tools)'], arrow: 'browser-anam' },
+            mapboxToBrowser: { x: 230, y: 195, text: 'Map tiles', arrow: 'mapbox-browser' },
+            mapillaryToBrowser: { x: 365, y: 205, text: 'Street imagery', arrow: 'mapillary-browser' },
+            mediaToBackend: { x: 560, y: 560, text: 'Photos/videos', arrow: 'media-backend' }
+        };
+
+        let dragging = null;
+        let dragOffset = { x: 0, y: 0 };
+        let selectedBox = null;
+        let autoPosition = false;
+
+        const canvas = document.getElementById('canvas');
+        const boxesGroup = document.getElementById('boxes');
+        const arrowsGroup = document.getElementById('arrows');
+        const labelsGroup = document.getElementById('labels');
+
+        function getBoxCenter(boxId) {
+            const box = boxes[boxId];
+            return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+        }
+
+        function getBoxEdge(fromBoxId, toBoxId) {
+            const from = boxes[fromBoxId];
+            const to = boxes[toBoxId];
+
+            const fromCenter = { x: from.x + from.width / 2, y: from.y + from.height / 2 };
+            const toCenter = { x: to.x + to.width / 2, y: to.y + to.height / 2 };
+
+            const dx = toCenter.x - fromCenter.x;
+            const dy = toCenter.y - fromCenter.y;
+            const angle = Math.atan2(dy, dx);
+
+            // Calculate intersection with box edges
+            const fromEdge = getEdgeIntersection(from, angle);
+            const toEdge = getEdgeIntersection(to, angle + Math.PI);
+
+            return {
+                from: { x: fromCenter.x + fromEdge.x, y: fromCenter.y + fromEdge.y },
+                to: { x: toCenter.x + toEdge.x, y: toCenter.y + toEdge.y }
+            };
+        }
+
+        function getEdgeIntersection(box, angle) {
+            const dx = Math.cos(angle);
+            const dy = Math.sin(angle);
+
+            const halfWidth = box.width / 2;
+            const halfHeight = box.height / 2;
+
+            // Find smallest positive t for intersection
+            let t = Infinity;
+
+            if (Math.abs(dx) > 0.001) {
+                const tX = dx > 0 ? halfWidth / dx : -halfWidth / dx;
+                if (tX > 0) t = Math.min(t, tX);
+            }
+
+            if (Math.abs(dy) > 0.001) {
+                const tY = dy > 0 ? halfHeight / dy : -halfHeight / dy;
+                if (tY > 0) t = Math.min(t, tY);
+            }
+
+            return { x: dx * t, y: dy * t };
+        }
+
+        function renderArrows() {
+            arrowsGroup.innerHTML = '';
+            arrows.forEach(arrow => {
+                const { from, to } = getBoxEdge(arrow.from, arrow.to);
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', `M ${from.x},${from.y} L ${to.x},${to.y}`);
+                path.setAttribute('class', arrow.style);
+                arrowsGroup.appendChild(path);
+            });
+        }
+
+        function renderBoxes() {
+            boxesGroup.innerHTML = '';
+            Object.keys(boxes).forEach(id => {
+                const box = boxes[id];
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+
+                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                rect.setAttribute('x', box.x);
+                rect.setAttribute('y', box.y);
+                rect.setAttribute('width', box.width);
+                rect.setAttribute('height', box.height);
+                rect.setAttribute('rx', 12);
+                rect.setAttribute('class', `box ${box.style} ${selectedBox === id ? 'selected' : ''}`);
+                rect.dataset.boxId = id;
+
+                const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                title.setAttribute('x', box.x + box.width / 2);
+                title.setAttribute('y', box.y + 30);
+                title.setAttribute('text-anchor', 'middle');
+                title.setAttribute('class', 'text-main');
+                title.textContent = box.title;
+
+                g.appendChild(rect);
+                g.appendChild(title);
+
+                box.subtitle.forEach((line, i) => {
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', box.x + box.width / 2);
+                    text.setAttribute('y', box.y + 50 + i * 15);
+                    text.setAttribute('text-anchor', 'middle');
+                    text.setAttribute('class', 'text-small');
+                    text.textContent = line;
+                    g.appendChild(text);
+                });
+
+                boxesGroup.appendChild(g);
+            });
+        }
+
+        function getAutoLabelPosition(labelId) {
+            const label = labels[labelId];
+            if (!label.arrow) return { x: label.x, y: label.y };
+
+            const [from, to] = label.arrow.split('-');
+            if (!boxes[from] || !boxes[to]) return { x: label.x, y: label.y };
+
+            const fromCenter = getBoxCenter(from);
+            const toCenter = getBoxCenter(to);
+
+            return {
+                x: (fromCenter.x + toCenter.x) / 2,
+                y: (fromCenter.y + toCenter.y) / 2 - 10
+            };
+        }
+
+        function renderLabels() {
+            labelsGroup.innerHTML = '';
+            Object.keys(labels).forEach(id => {
+                const label = labels[id];
+                const pos = autoPosition ? getAutoLabelPosition(id) : { x: label.x, y: label.y };
+                const text = Array.isArray(label.text) ? label.text : [label.text];
+
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+
+                const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+                bg.setAttribute('x', pos.x - 45);
+                bg.setAttribute('y', pos.y - 10);
+                bg.setAttribute('width', 90);
+                bg.setAttribute('height', text.length * 12 + 8);
+                bg.setAttribute('rx', 4);
+                bg.setAttribute('class', 'label-bg');
+                bg.dataset.labelId = id;
+
+                g.appendChild(bg);
+
+                text.forEach((line, i) => {
+                    const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    t.setAttribute('x', pos.x);
+                    t.setAttribute('y', pos.y + i * 12);
+                    t.setAttribute('text-anchor', 'middle');
+                    t.setAttribute('class', 'text-small');
+                    t.textContent = line;
+                    g.appendChild(t);
+                });
+
+                labelsGroup.appendChild(g);
+            });
+        }
+
+        function render() {
+            renderArrows();
+            renderBoxes();
+            renderLabels();
+        }
+
+        function getSVGPoint(e) {
+            const rect = canvas.getBoundingClientRect();
+            const scale = 1000 / rect.width;
+            return {
+                x: (e.clientX - rect.left) * scale,
+                y: (e.clientY - rect.top) * scale
+            };
+        }
+
+        canvas.addEventListener('mousedown', (e) => {
+            const target = e.target;
+            const boxId = target.dataset.boxId;
+            const labelId = target.dataset.labelId;
+
+            if (boxId) {
+                const point = getSVGPoint(e);
+                const box = boxes[boxId];
+                dragging = { type: 'box', id: boxId };
+                dragOffset = { x: point.x - box.x, y: point.y - box.y };
+                selectedBox = boxId;
+                document.getElementById('selected-box').textContent = boxId;
+                canvas.classList.add('dragging');
+            } else if (labelId && !autoPosition) {
+                const point = getSVGPoint(e);
+                const label = labels[labelId];
+                dragging = { type: 'label', id: labelId };
+                dragOffset = { x: point.x - label.x, y: point.y - label.y };
+                canvas.classList.add('dragging');
+            }
+
+            render();
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!dragging) return;
+
+            const point = getSVGPoint(e);
+
+            if (dragging.type === 'box') {
+                const box = boxes[dragging.id];
+                box.x = point.x - dragOffset.x;
+                box.y = point.y - dragOffset.y;
+            } else if (dragging.type === 'label') {
+                const label = labels[dragging.id];
+                label.x = point.x - dragOffset.x;
+                label.y = point.y - dragOffset.y;
+            }
+
+            render();
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            dragging = null;
+            canvas.classList.remove('dragging');
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            dragging = null;
+            canvas.classList.remove('dragging');
+        });
+
+        document.getElementById('auto-position-btn').addEventListener('click', () => {
+            autoPosition = !autoPosition;
+            const btn = document.getElementById('auto-position-btn');
+            btn.textContent = autoPosition ? '✓ Auto-position labels' : 'Auto-position labels';
+            btn.classList.toggle('active', autoPosition);
+            render();
+        });
+
+        document.getElementById('export-btn').addEventListener('click', () => {
+            const svgElement = canvas.cloneNode(true);
+            svgElement.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+
+            const serializer = new XMLSerializer();
+            const svgString = serializer.serializeToString(svgElement);
+
+            const blob = new Blob([svgString], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'anam-architecture-diagram.svg';
+            link.click();
+            URL.revokeObjectURL(url);
+        });
+
+        // Initial render
+        render();
+    </script>
+</body>
+
+</html>
