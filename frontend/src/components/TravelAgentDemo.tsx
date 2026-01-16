@@ -2088,18 +2088,29 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
               exit={{ x: 300, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             >
-              <AnimatePresence mode="wait">
-                <motion.img
-                  key={activeLandmarkImage?.url || currentLandmark.imageUrl}
-                  src={activeLandmarkImage?.url || currentLandmark.imageUrl}
-                  alt={currentLandmark.name}
-                  className="landmark-image"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.4 }}
-                />
-              </AnimatePresence>
+              <div className="landmark-image-wrap">
+                <AnimatePresence mode="wait">
+                  <motion.img
+                    key={activeLandmarkImage?.url || currentLandmark.imageUrl}
+                    src={activeLandmarkImage?.url || currentLandmark.imageUrl}
+                    alt={currentLandmark.name}
+                    className="landmark-image"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.4 }}
+                  />
+                </AnimatePresence>
+                {combinedImages.length > 1 && (
+                  <button
+                    className="landmark-image-next"
+                    onClick={() => advanceMediaImage(1)}
+                    aria-label="Next photo"
+                  >
+                    {'>'}
+                  </button>
+                )}
+              </div>
               {LIVE_PHOTOS && livePhotoStatus === 'loading' && (
                 <div className="landmark-photo-status">Loading live photos...</div>
               )}
