@@ -742,6 +742,7 @@ const TravelAgentDemo = () => {
     const nextLandmarks = buildLandmarksMap(getCityData(nextCity).landmarks);
     landmarksRef.current = nextLandmarks;
     orchestratorRef.current?.setLandmarks(nextLandmarks);
+    orchestratorRef.current?.setCityLabel(getCityData(nextCity).city.name);
     setSelectedCity(nextCity);
   };
 
@@ -835,6 +836,7 @@ const TravelAgentDemo = () => {
     orchestratorRef.current = new UIOrchestrator(
       map.current,
       landmarksById,
+      cityData.city.name,
       setCurrentLandmark,
       setUIState,
       openMediaOverlay,

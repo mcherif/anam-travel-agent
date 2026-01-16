@@ -639,23 +639,98 @@
 
 /* Mapbox Popup Customization */
 .mapboxgl-popup-content {
-  padding: 16px;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
-.landmark-popup h3 {
-  margin: 0 0 8px;
+.mapboxgl-popup-close-button {
+  color: #e2e8f0;
   font-size: 16px;
+  top: 6px;
+  right: 6px;
+}
+
+.mapboxgl-popup-tip {
+  border-top-color: rgba(15, 23, 42, 0.72);
+  border-bottom-color: rgba(15, 23, 42, 0.72);
+  border-left-color: rgba(15, 23, 42, 0.72);
+  border-right-color: rgba(15, 23, 42, 0.72);
+}
+
+.landmark-popup {
+  min-width: 210px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.35);
+  color: #e2e8f0;
+  backdrop-filter: blur(8px);
+}
+
+.landmark-popup-header {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.landmark-popup-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(59, 130, 246, 0.22);
+  color: #93c5fd;
+}
+
+.landmark-popup-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.landmark-popup-title h3 {
+  margin: 0;
+  font-size: 15px;
   font-weight: 600;
-  color: #1f2937;
+  color: #f8fafc;
+}
+
+.landmark-popup-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.landmark-popup-city {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #cbd5f5;
+}
+
+.landmark-popup-chip {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.2);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  color: #e2e8f0;
 }
 
 .landmark-popup p {
   margin: 0;
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1.5;
-  color: #6b7280;
+  color: #e2e8f0;
 }
 
 .media-overlay {

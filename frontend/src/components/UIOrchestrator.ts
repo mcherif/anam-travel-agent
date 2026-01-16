@@ -30,6 +30,7 @@ export class UIOrchestrator {
   private state: OrchestrationState;
   private map: mapboxgl.Map;
   private landmarks: LandmarkMap;
+  private cityLabel: string;
   private setCurrentLandmark: (landmark: Landmark | null) => void;
   private setUIState: (state: UIState) => void;
   private showMediaOverlay: (id: string, kind: 'photo' | 'video') => void;
@@ -40,6 +41,7 @@ export class UIOrchestrator {
   constructor(
     map: mapboxgl.Map,
     landmarks: LandmarkMap,
+    cityLabel: string,
     setCurrentLandmark: (landmark: Landmark | null) => void,
     setUIState: (state: UIState) => void,
     showMediaOverlay: (id: string, kind: 'photo' | 'video') => void,
@@ -244,12 +246,29 @@ export class UIOrchestrator {
       <div class="marker-icon">*</div>
     `;
 
+    const cityMarkup = this.cityLabel
+      ? `<span class="landmark-popup-city">${this.cityLabel}</span>`
+      : '';
+
     const marker = new mapboxgl.Marker(el)
       .setLngLat(landmark.coordinates)
       .setPopup(
         new mapboxgl.Popup({ offset: 25 }).setHTML(`
           <div class="landmark-popup">
-            <h3>${landmark.name}</h3>
+            <div class="landmark-popup-header">
+              <span class="landmark-popup-icon" aria-hidden="true">
+                <svg viewBox="0 0 20 20" role="presentation" focusable="false">
+                  <path fill="currentColor" d="M10 2.5c-2.485 0-4.5 2.015-4.5 4.5 0 3.469 4.5 9.5 4.5 9.5s4.5-6.031 4.5-9.5c0-2.485-2.015-4.5-4.5-4.5zm0 6a1.5 1.5 0 110-3 1.5 1.5 0 010 3z" />
+                </svg>
+              </span>
+              <div class="landmark-popup-title">
+                <h3>${landmark.name}</h3>
+                <div class="landmark-popup-meta">
+                  ${cityMarkup}
+                  <span class="landmark-popup-chip">Landmark</span>
+                </div>
+              </div>
+            </div>
             <p>${landmark.description}</p>
           </div>
         `)
@@ -272,6 +291,11 @@ export class UIOrchestrator {
     this.state.currentLandmark = null;
 
     this.setCurrentLandmark(null);
+  }
+
+
+  setCityLabel(label: string): void {
+    this.cityLabel = label;
   }
 
   setLandmarks(landmarks: LandmarkMap): void {
