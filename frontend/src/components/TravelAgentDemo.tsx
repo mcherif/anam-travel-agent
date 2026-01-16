@@ -408,6 +408,7 @@ const TravelAgentDemo = () => {
   const [anamClient, setAnamClient] = useState<ReturnType<typeof createClient> | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [mapReady, setMapReady] = useState(false);
+  const [mapError, setMapError] = useState<string | null>(null);
   const [anamReady, setAnamReady] = useState(false);
   const [micStatus, setMicStatus] = useState<'unknown' | 'pending' | 'granted' | 'denied' | 'active'>('unknown');
   const [manualMessage, setManualMessage] = useState(
@@ -749,6 +750,20 @@ const TravelAgentDemo = () => {
       return;
     }
 
+    const mapboxSupported = mapboxgl.supported ? mapboxgl.supported() : true;
+    (window as any).__mapboxSupported = mapboxSupported;
+    if (!mapboxSupported) {
+      setMapError('WebGL is not supported or hardware acceleration is disabled.');
+      return;
+    }
+
+    const loadTimeout = window.setTimeout(() => {
+      if (!map.current || map.current.isStyleLoaded()) {
+        return;
+      }
+      setMapError('Map load timed out. Check WebGL and network access to mapbox.com.');
+    }, 8000);
+
     map.current = new mapboxgl.Map({
       container: mapContainer.current,
       style: 'mapbox://styles/mapbox/satellite-streets-v12',
@@ -759,8 +774,17 @@ const TravelAgentDemo = () => {
     });
 
     map.current.addControl(new mapboxgl.NavigationControl());
+    (window as any).__mapInstance = map.current;
+    (window as any).__mapboxgl = mapboxgl;
+
+    map.current.on('error', (event) => {
+      const message = event?.error?.message || 'Map failed to load';
+      setMapError(message);
+      console.error('Mapbox error:', event?.error || event);
+    });
 
     map.current.on('load', () => {
+      window.clearTimeout(loadTimeout);
       if (map.current) {
         if (!map.current.getSource('mapbox-dem')) {
           map.current.addSource('mapbox-dem', {
@@ -800,6 +824,7 @@ const TravelAgentDemo = () => {
           position: [1.15, 210, 30]
         });
 
+        setMapError(null);
         applyEnglishLabels(map.current);
         map.current.on('styledata', () => applyEnglishLabels(map.current as mapboxgl.Map));
       }
@@ -1874,7 +1899,7 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
                 onClick={() => setCameraPanelCollapsed((prev) => !prev)}
                 aria-label={cameraPanelCollapsed ? 'Expand camera panel' : 'Collapse camera panel'}
               >
-                {cameraPanelCollapsed ? '+' : '–'}
+                {cameraPanelCollapsed ? '+' : '-'}
               </button>
             </div>
             {!cameraPanelCollapsed && (
@@ -2049,7 +2074,7 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
                     {activeLandmarkImage.title || 'Openverse'}
                   </a>
                   {activeLandmarkImage.author && ` by ${activeLandmarkImage.author}`}
-                  {activeLandmarkImage.provider && ` · ${activeLandmarkImage.provider}`}
+                  {activeLandmarkImage.provider && ` - ${activeLandmarkImage.provider}`}
                   {activeLandmarkImage.license &&
                     ` (${activeLandmarkImage.license})`}
                 </div>

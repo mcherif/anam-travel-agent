@@ -34,13 +34,13 @@ if ($Install -or !(Test-Path -LiteralPath (Join-Path $frontend 'node_modules')))
 Write-Host "Starting backend and frontend in separate windows..."
 
 $backendProc = Start-Process -FilePath "powershell" -ArgumentList @(
-  "-NoExit",
+  "-NoProfile",
   "-Command",
   "Set-Location -LiteralPath `"$backend`"; npm start"
 ) -PassThru
 
 $frontendProc = Start-Process -FilePath "powershell" -ArgumentList @(
-  "-NoExit",
+  "-NoProfile",
   "-Command",
   "Set-Location -LiteralPath `"$frontend`"; npm run dev"
 ) -PassThru
@@ -48,7 +48,11 @@ $frontendProc = Start-Process -FilePath "powershell" -ArgumentList @(
 function Stop-ChildProcesses {
   foreach ($proc in @($backendProc, $frontendProc)) {
     if ($proc -and !$proc.HasExited) {
-      Stop-Process -Id $proc.Id -Force
+      try {
+        & taskkill /T /F /PID $proc.Id | Out-Null
+      } catch {
+        Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+      }
     }
   }
 }
@@ -67,11 +71,11 @@ try {
     $firefox = Get-Command firefox -ErrorAction SilentlyContinue
 
     if ($edge) {
-      $browserProc = Start-Process -FilePath $edge.Path -ArgumentList @("--app=$url") -PassThru
+      $browserProc = Start-Process -FilePath $edge.Path -ArgumentList @("--new-window", "--app=$url") -PassThru
     } elseif ($chrome) {
-      $browserProc = Start-Process -FilePath $chrome.Path -ArgumentList @("--app=$url") -PassThru
+      $browserProc = Start-Process -FilePath $chrome.Path -ArgumentList @("--new-window", "--app=$url") -PassThru
     } elseif ($brave) {
-      $browserProc = Start-Process -FilePath $brave.Path -ArgumentList @("--app=$url") -PassThru
+      $browserProc = Start-Process -FilePath $brave.Path -ArgumentList @("--new-window", "--app=$url") -PassThru
     } elseif ($firefox) {
       $browserProc = Start-Process -FilePath $firefox.Path -ArgumentList @("-new-instance", "-private-window", $url) -PassThru
     } else {
