@@ -2,499 +2,702 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Editable Architecture Diagram</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Editable Architecture Diagram</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
 
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #f8f9fa;
-            overflow: hidden;
-        }
+    body {
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      background: linear-gradient(135deg, #f8fafc, #eef2ff);
+      color: #0f172a;
+      overflow: hidden;
+    }
 
-        #header {
-            background: white;
-            border-bottom: 1px solid #e2e8f0;
-            padding: 16px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
+    #header {
+      background: rgba(255, 255, 255, 0.96);
+      border-bottom: 1px solid #e2e8f0;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
 
-        #header h1 {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
+    #header h1 {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
 
-        #header p {
-            font-size: 13px;
-            color: #64748b;
-        }
+    #header p {
+      font-size: 12px;
+      color: #64748b;
+    }
 
-        .controls {
-            display: flex;
-            gap: 8px;
-        }
+    .controls {
+      display: flex;
+      gap: 8px;
+    }
 
-        button {
-            padding: 8px 16px;
-            border-radius: 6px;
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            border: 1px solid #cbd5e1;
-            background: white;
-            color: #1e293b;
-        }
+    button {
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid #cbd5e1;
+      background: white;
+      color: #1e293b;
+    }
 
-        button.primary {
-            background: #10b981;
-            color: white;
-            border: none;
-        }
+    button.primary {
+      background: #2563eb;
+      color: white;
+      border: none;
+    }
 
-        button.active {
-            background: #0369a1;
-            color: white;
-        }
+    button.active {
+      background: #0f172a;
+      color: white;
+    }
 
-        #canvas-container {
-            flex: 1;
-            overflow: hidden;
-            position: relative;
-        }
+    #canvas-container {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+    }
 
-        #canvas {
-            width: 100%;
-            height: calc(100vh - 130px);
-            background: #f8f9fa;
-            cursor: default;
-        }
+    #canvas {
+      width: 100%;
+      height: calc(100vh - 120px);
+      background: transparent;
+      cursor: default;
+    }
 
-        #canvas.dragging {
-            cursor: grabbing;
-        }
+    #canvas.dragging {
+      cursor: grabbing;
+    }
 
-        .box {
-            fill: #ffffff;
-            stroke: #94a3b8;
-            stroke-width: 1.5;
-            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
-            cursor: move;
-        }
+    .box {
+      fill: #ffffff;
+      stroke: #cbd5f5;
+      stroke-width: 1.4;
+      filter: drop-shadow(0 6px 10px rgba(15, 23, 42, 0.12));
+      cursor: move;
+    }
 
-        .box.selected {
-            stroke: #0369a1;
-            stroke-width: 3;
-        }
+    .box.selected {
+      stroke: #2563eb;
+      stroke-width: 3;
+    }
 
-        .box.main-box {
-            fill: #e0f2fe;
-            stroke: #0369a1;
-            stroke-width: 2;
-        }
+    .box.main-box {
+      fill: #e0f2fe;
+      stroke: #2563eb;
+      stroke-width: 2;
+    }
 
-        .box.platform-box {
-            fill: #dbeafe;
-            stroke: #0369a1;
-            stroke-width: 1.5;
-        }
+    .box.platform-box {
+      fill: #dbeafe;
+      stroke: #2563eb;
+      stroke-width: 1.6;
+    }
 
-        .box.backend-box {
-            fill: #f1f5f9;
-            stroke: #64748b;
-            stroke-width: 1.5;
-        }
+    .box.backend-box {
+      fill: #f1f5f9;
+      stroke: #64748b;
+      stroke-width: 1.4;
+    }
 
-        .box.auxiliary-box {
-            fill: #f8fafc;
-            stroke: #cbd5e1;
-            stroke-width: 1;
-        }
+    .box.auxiliary-box {
+      fill: #f8fafc;
+      stroke: #cbd5e1;
+      stroke-width: 1.2;
+    }
 
-        .text-main {
-            font-family: system-ui;
-            font-size: 14px;
-            fill: #1e293b;
-            font-weight: 600;
-            pointer-events: none;
-            user-select: none;
-        }
+    .text-main {
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      font-size: 14px;
+      fill: #0f172a;
+      font-weight: 600;
+      pointer-events: none;
+      user-select: none;
+    }
 
-        .text-small {
-            font-family: system-ui;
-            font-size: 11px;
-            fill: #64748b;
-            pointer-events: none;
-            user-select: none;
-        }
+    .text-small {
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      font-size: 11px;
+      fill: #475569;
+      pointer-events: none;
+      user-select: none;
+    }
 
-        .arrow {
-            stroke: #64748b;
-            stroke-width: 1.5;
-            fill: none;
-            marker-end: url(#arrowhead);
-        }
+    .arrow {
+      stroke: #64748b;
+      stroke-width: 1.6;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      marker-end: url(#arrowhead);
+    }
 
-        .arrow-bold {
-            stroke: #0369a1;
-            stroke-width: 2;
-            fill: none;
-            marker-end: url(#arrowhead-bold);
-        }
+    .arrow-bold {
+      stroke: #2563eb;
+      stroke-width: 2.2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      marker-end: url(#arrowhead-bold);
+    }
 
-        .label-bg {
-            fill: rgba(248, 250, 252, 0.95);
-            stroke: #e2e8f0;
-            stroke-width: 1;
-            cursor: move;
-        }
+    .arrow-media {
+      stroke: #16a34a;
+      stroke-width: 2;
+      fill: none;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      marker-end: url(#arrowhead-media);
+    }
 
-        #footer {
-            background: white;
-            border-top: 1px solid #e2e8f0;
-            padding: 12px 16px;
-            font-size: 12px;
-            color: #64748b;
-        }
-    </style>
+    .label-bg {
+      fill: rgba(248, 250, 252, 0.95);
+      stroke: #e2e8f0;
+      stroke-width: 1;
+      cursor: move;
+    }
+
+    #footer {
+      background: rgba(255, 255, 255, 0.96);
+      border-top: 1px solid #e2e8f0;
+      padding: 10px 16px;
+      font-size: 11px;
+      color: #64748b;
+    }
+  </style>
 </head>
 
 <body>
-    <div id="header">
-        <div>
-            <h1>Editable Architecture Diagram</h1>
-            <p>Click and drag boxes or labels to reposition • Selected: <strong id="selected-box">none</strong></p>
-        </div>
-        <div class="controls">
-            <button id="auto-position-btn">Auto-position labels</button>
-            <button id="export-btn" class="primary">Download SVG</button>
-        </div>
+  <div id="header">
+    <div>
+      <h1>Editable Architecture Diagram</h1>
+      <p>Drag boxes or labels to reposition. Selected: <strong id="selected-box">none</strong></p>
     </div>
-
-    <div id="canvas-container">
-        <svg id="canvas" viewBox="0 0 1000 700">
-            <defs>
-                <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
-                    <polygon points="0 0, 10 3, 0 6" fill="#64748b" />
-                </marker>
-                <marker id="arrowhead-bold" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
-                    <polygon points="0 0, 10 3, 0 6" fill="#0369a1" />
-                </marker>
-            </defs>
-
-            <text x="500" y="40" text-anchor="middle"
-                style="font-family: system-ui; font-size: 20px; fill: #0f172a; font-weight: 700;">
-                Anam Travel Agent Architecture
-            </text>
-
-            <g id="arrows"></g>
-            <g id="boxes"></g>
-            <g id="labels"></g>
-
-            <text x="50" y="670" style="font-family: system-ui; font-size: 10px; fill: #94a3b8;">
-                Data flow: User requests session → Backend mints token → Browser connects to Anam → Persona calls tools
-                → UI orchestrates map
-            </text>
-        </svg>
+    <div class="controls">
+      <button id="auto-position-btn">Auto-position labels</button>
+      <button id="export-btn" class="primary">Download SVG</button>
     </div>
+  </div>
 
-    <div id="footer">
-        <strong>Try it:</strong> Drag any box and watch arrows follow • Toggle auto-position to snap labels • Download
-        SVG when ready
-    </div>
+  <div id="canvas-container">
+    <svg id="canvas" viewBox="0 0 1200 720">
+      <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+          <polygon points="0 0, 10 3, 0 6" fill="#64748b" />
+        </marker>
+        <marker id="arrowhead-bold" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+          <polygon points="0 0, 10 3, 0 6" fill="#2563eb" />
+        </marker>
+        <marker id="arrowhead-media" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+          <polygon points="0 0, 10 3, 0 6" fill="#16a34a" />
+        </marker>
+      </defs>
 
-    <script>
-        const boxes = {
-            user: { x: 50, y: 280, width: 100, height: 80, title: 'User', subtitle: ['Interacts via', 'browser'], style: 'box' },
-            browser: { x: 300, y: 250, width: 250, height: 140, title: 'Browser UI', subtitle: ['React + Mapbox GL', '+ Anam JS SDK', '• Map orchestration', '• Tool handlers', '• Client-side UI sync'], style: 'main-box' },
-            anam: { x: 700, y: 260, width: 220, height: 120, title: 'Anam Platform', subtitle: ['• LLM (persona logic)', '• TTS (voice synthesis)', '• Video generation', '• Tool call routing'], style: 'platform-box' },
-            backend: { x: 320, y: 520, width: 210, height: 100, title: 'Backend API', subtitle: ['Node.js + Express', '• Session token minting', '• Photo/video search'], style: 'backend-box' },
-            mapbox: { x: 80, y: 100, width: 140, height: 60, title: 'Mapbox Tiles', subtitle: ['Map data + styles'], style: 'auxiliary-box' },
-            mapillary: { x: 280, y: 100, width: 140, height: 60, title: 'Mapillary', subtitle: ['Street-level imagery'], style: 'auxiliary-box' },
-            media: { x: 620, y: 530, width: 180, height: 80, title: 'Media APIs', subtitle: ['• Pexels (photos+video)', '• Openverse (photos)'], style: 'auxiliary-box' }
+      <style id="diagram-styles">
+        .box {
+          fill: #ffffff;
+          stroke: #cbd5f5;
+          stroke-width: 1.4;
+          filter: drop-shadow(0 6px 10px rgba(15, 23, 42, 0.12));
+          cursor: move;
+        }
+
+        .box.selected {
+          stroke: #2563eb;
+          stroke-width: 3;
+        }
+
+        .box.main-box {
+          fill: #e0f2fe;
+          stroke: #2563eb;
+          stroke-width: 2;
+        }
+
+        .box.platform-box {
+          fill: #dbeafe;
+          stroke: #2563eb;
+          stroke-width: 1.6;
+        }
+
+        .box.backend-box {
+          fill: #f1f5f9;
+          stroke: #64748b;
+          stroke-width: 1.4;
+        }
+
+        .box.auxiliary-box {
+          fill: #f8fafc;
+          stroke: #cbd5e1;
+          stroke-width: 1.2;
+        }
+
+        .text-main {
+          font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+          font-size: 14px;
+          fill: #0f172a;
+          font-weight: 600;
+          pointer-events: none;
+          user-select: none;
+        }
+
+        .text-small {
+          font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+          font-size: 11px;
+          fill: #475569;
+          pointer-events: none;
+          user-select: none;
+        }
+
+        .arrow {
+          stroke: #64748b;
+          stroke-width: 1.6;
+          fill: none;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          marker-end: url(#arrowhead);
+        }
+
+        .arrow-bold {
+          stroke: #2563eb;
+          stroke-width: 2.2;
+          fill: none;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          marker-end: url(#arrowhead-bold);
+        }
+
+        .arrow-media {
+          stroke: #16a34a;
+          stroke-width: 2;
+          fill: none;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          marker-end: url(#arrowhead-media);
+        }
+
+        .label-bg {
+          fill: rgba(248, 250, 252, 0.95);
+          stroke: #e2e8f0;
+          stroke-width: 1;
+          cursor: move;
+        }
+
+        .resize-handle {
+          fill: #ffffff;
+          stroke: #94a3b8;
+          stroke-width: 1.2;
+          cursor: se-resize;
+        }
+      </style>
+
+      <text x="600" y="36" text-anchor="middle"
+        style="font-family: 'IBM Plex Sans', 'Segoe UI', sans-serif; font-size: 22px; fill: #0f172a; font-weight: 700;">
+        Anam Travel Agent Architecture
+      </text>
+      <text x="600" y="58" text-anchor="middle"
+        style="font-family: 'IBM Plex Sans', 'Segoe UI', sans-serif; font-size: 12px; fill: #475569;">
+        Persona-driven UI orchestration across browser, backend, and media services
+      </text>
+
+      <g id="boxes"></g>
+      <g id="arrows"></g>
+      <g id="labels"></g>
+      <g id="legend"></g>
+
+      <text x="40" y="690" style="font-family: 'IBM Plex Sans', 'Segoe UI', sans-serif; font-size: 10px; fill: #94a3b8;">
+        Data flow: User input -> Browser UI -> Backend token -> Anam session -> Tool calls -> UI sync
+      </text>
+    </svg>
+  </div>
+
+  <div id="footer">
+    Drag boxes and labels. Use Auto-position to snap labels. Download SVG when ready.
+  </div>
+
+  <script>
+    const boxes = {
+      user: { x: 70, y: 320, width: 130, height: 90, title: 'Traveler', subtitle: ['Voice or text', 'in the browser'], style: 'box' },
+      data: { x: 70, y: 130, width: 160, height: 70, title: 'Landmarks DB', subtitle: ['Curated metadata'], style: 'auxiliary-box' },
+      browser: { x: 320, y: 285, width: 230, height: 130, title: 'Browser UI', subtitle: ['React app + Mapbox GL', 'Anam JS SDK', 'UI orchestrator + tool handlers', 'State sync + media overlay'], style: 'main-box' },
+      anam: { x: 770, y: 255, width: 230, height: 130, title: 'Anam Platform', subtitle: ['LLM (persona logic)', 'TTS + voice stream', 'Avatar video + lip sync', 'Tool call routing'], style: 'platform-box' },
+      backend: { x: 340, y: 520, width: 250, height: 120, title: 'Backend API', subtitle: ['Session token minting', 'Media search proxy', 'Keeps API keys server-side'], style: 'backend-box' },
+      mapbox: { x: 250, y: 80, width: 150, height: 70, title: 'Mapbox', subtitle: ['Tiles + styles'], style: 'auxiliary-box' },
+      mapillary: { x: 420, y: 80, width: 150, height: 70, title: 'Mapillary', subtitle: ['Street imagery'], style: 'auxiliary-box' },
+      media: { x: 740, y: 520, width: 260, height: 110, title: 'Media Providers', subtitle: ['Pexels (photos + video)', 'Openverse (photos)'], style: 'auxiliary-box' }
+    };
+
+    const arrows = [
+      { from: 'user', to: 'browser', style: 'arrow' },
+      { from: 'data', to: 'browser', style: 'arrow' },
+      { from: 'mapbox', to: 'browser', style: 'arrow' },
+      { from: 'mapillary', to: 'browser', style: 'arrow' },
+      { from: 'browser', to: 'backend', style: 'arrow' },
+      { from: 'backend', to: 'anam', style: 'arrow' },
+      { from: 'browser', to: 'anam', style: 'arrow-bold' },
+      { from: 'anam', to: 'browser', style: 'arrow-bold' },
+      { from: 'backend', to: 'media', style: 'arrow-media' }
+    ];
+
+    const labels = {
+      userToBrowser: { x: 260, y: 345, text: 'User input', arrow: 'user-browser' },
+      dataToBrowser: { x: 300, y: 210, text: 'Curated data', arrow: 'data-browser' },
+      mapboxToBrowser: { x: 410, y: 200, text: 'Map tiles', arrow: 'mapbox-browser' },
+      mapillaryToBrowser: { x: 560, y: 200, text: 'Street imagery', arrow: 'mapillary-browser' },
+      browserToBackend: { x: 450, y: 470, text: ['Token + media', 'requests'], arrow: 'browser-backend' },
+      backendToAnam: { x: 670, y: 500, text: 'Token minting', arrow: 'backend-anam' },
+      browserToAnam: { x: 660, y: 330, text: ['WebRTC A/V', '+ tool events'], arrow: 'browser-anam' },
+      backendToMedia: { x: 700, y: 575, text: 'Media search', arrow: 'backend-media' }
+    };
+
+    const MIN_BOX_WIDTH = 180;
+    const MIN_BOX_HEIGHT = 110;
+
+    let dragging = null;
+    let dragOffset = { x: 0, y: 0 };
+    let selectedBox = null;
+    let autoPosition = false;
+
+    const canvas = document.getElementById('canvas');
+    const boxesGroup = document.getElementById('boxes');
+    const arrowsGroup = document.getElementById('arrows');
+    const labelsGroup = document.getElementById('labels');
+    const legendGroup = document.getElementById('legend');
+
+    function getBoxCenter(boxId) {
+      const box = boxes[boxId];
+      return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+    }
+
+    function getBoxEdge(fromBoxId, toBoxId) {
+      const from = boxes[fromBoxId];
+      const to = boxes[toBoxId];
+
+      const fromCenter = { x: from.x + from.width / 2, y: from.y + from.height / 2 };
+      const toCenter = { x: to.x + to.width / 2, y: to.y + to.height / 2 };
+
+      const dx = toCenter.x - fromCenter.x;
+      const dy = toCenter.y - fromCenter.y;
+      const angle = Math.atan2(dy, dx);
+
+      const fromEdge = getEdgeIntersection(from, angle);
+      const toEdge = getEdgeIntersection(to, angle + Math.PI);
+
+      return {
+        from: { x: fromCenter.x + fromEdge.x, y: fromCenter.y + fromEdge.y },
+        to: { x: toCenter.x + toEdge.x, y: toCenter.y + toEdge.y }
+      };
+    }
+
+    function getEdgeIntersection(box, angle) {
+      const dx = Math.cos(angle);
+      const dy = Math.sin(angle);
+
+      const halfWidth = box.width / 2;
+      const halfHeight = box.height / 2;
+
+      let t = Infinity;
+
+      if (Math.abs(dx) > 0.001) {
+        const tX = dx > 0 ? halfWidth / dx : -halfWidth / dx;
+        if (tX > 0) t = Math.min(t, tX);
+      }
+
+      if (Math.abs(dy) > 0.001) {
+        const tY = dy > 0 ? halfHeight / dy : -halfHeight / dy;
+        if (tY > 0) t = Math.min(t, tY);
+      }
+
+      return { x: dx * t, y: dy * t };
+    }
+
+    function renderArrows() {
+      arrowsGroup.innerHTML = '';
+      arrows.forEach(arrow => {
+        const edge = getBoxEdge(arrow.from, arrow.to);
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('d', `M ${edge.from.x},${edge.from.y} L ${edge.to.x},${edge.to.y}`);
+        path.setAttribute('class', arrow.style);
+        arrowsGroup.appendChild(path);
+      });
+    }
+
+    function renderBoxes() {
+      boxesGroup.innerHTML = '';
+      Object.keys(boxes).forEach(id => {
+        const box = boxes[id];
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', box.x);
+        rect.setAttribute('y', box.y);
+        rect.setAttribute('width', box.width);
+        rect.setAttribute('height', box.height);
+        rect.setAttribute('rx', 14);
+        rect.setAttribute('class', `box ${box.style} ${selectedBox === id ? 'selected' : ''}`);
+        rect.dataset.boxId = id;
+
+        const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        title.setAttribute('x', box.x + box.width / 2);
+        title.setAttribute('y', box.y + 30);
+        title.setAttribute('text-anchor', 'middle');
+        title.setAttribute('class', 'text-main');
+        title.textContent = box.title;
+
+        g.appendChild(rect);
+        g.appendChild(title);
+
+        box.subtitle.forEach((line, i) => {
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('x', box.x + box.width / 2);
+          text.setAttribute('y', box.y + 50 + i * 16);
+          text.setAttribute('text-anchor', 'middle');
+          text.setAttribute('class', 'text-small');
+          text.textContent = line;
+          g.appendChild(text);
+        });
+
+        if (selectedBox === id) {
+          const handle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+          handle.setAttribute('cx', box.x + box.width - 8);
+          handle.setAttribute('cy', box.y + box.height - 8);
+          handle.setAttribute('r', 6);
+          handle.setAttribute('class', 'resize-handle');
+          handle.dataset.boxId = id;
+          handle.dataset.handle = 'resize';
+          g.appendChild(handle);
+        }
+
+        boxesGroup.appendChild(g);
+      });
+    }
+
+    function getAutoLabelPosition(labelId) {
+      const label = labels[labelId];
+      if (!label.arrow) return { x: label.x, y: label.y };
+
+      const parts = label.arrow.split('-');
+      const from = parts[0];
+      const to = parts[1];
+      if (!boxes[from] || !boxes[to]) return { x: label.x, y: label.y };
+
+      const fromCenter = getBoxCenter(from);
+      const toCenter = getBoxCenter(to);
+
+      return {
+        x: (fromCenter.x + toCenter.x) / 2,
+        y: (fromCenter.y + toCenter.y) / 2 - 10
+      };
+    }
+
+    function renderLabels() {
+      labelsGroup.innerHTML = '';
+      Object.keys(labels).forEach(id => {
+        const label = labels[id];
+        const pos = autoPosition ? getAutoLabelPosition(id) : { x: label.x, y: label.y };
+        const text = Array.isArray(label.text) ? label.text : [label.text];
+
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+
+        const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        bg.setAttribute('x', pos.x - 60);
+        bg.setAttribute('y', pos.y - 12);
+        bg.setAttribute('width', 120);
+        bg.setAttribute('height', text.length * 14 + 8);
+        bg.setAttribute('rx', 4);
+        bg.setAttribute('class', 'label-bg');
+        bg.dataset.labelId = id;
+
+        g.appendChild(bg);
+
+        text.forEach((line, i) => {
+          const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          t.setAttribute('x', pos.x);
+          t.setAttribute('y', pos.y + i * 14);
+          t.setAttribute('text-anchor', 'middle');
+          t.setAttribute('class', 'text-small');
+          t.textContent = line;
+          g.appendChild(t);
+        });
+
+        labelsGroup.appendChild(g);
+      });
+    }
+
+    function renderLegend() {
+      legendGroup.innerHTML = '';
+      const legend = { x: 820, y: 80, width: 300, height: 96 };
+
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', legend.x);
+      rect.setAttribute('y', legend.y);
+      rect.setAttribute('width', legend.width);
+      rect.setAttribute('height', legend.height);
+      rect.setAttribute('rx', 12);
+      rect.setAttribute('fill', '#ffffff');
+      rect.setAttribute('stroke', '#e2e8f0');
+      legendGroup.appendChild(rect);
+
+      const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      title.setAttribute('x', legend.x + 20);
+      title.setAttribute('y', legend.y + 24);
+      title.setAttribute('class', 'text-small');
+      title.textContent = 'Legend';
+      legendGroup.appendChild(title);
+
+      const entries = [
+        { y: legend.y + 44, className: 'arrow', label: 'Control / config' },
+        { y: legend.y + 62, className: 'arrow-bold', label: 'Realtime session' },
+        { y: legend.y + 80, className: 'arrow-media', label: 'Media fetch' }
+      ];
+
+      entries.forEach((entry) => {
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', legend.x + 20);
+        line.setAttribute('y1', entry.y);
+        line.setAttribute('x2', legend.x + 80);
+        line.setAttribute('y2', entry.y);
+        line.setAttribute('class', entry.className);
+        legendGroup.appendChild(line);
+
+        const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        label.setAttribute('x', legend.x + 90);
+        label.setAttribute('y', entry.y + 4);
+        label.setAttribute('class', 'text-small');
+        label.textContent = entry.label;
+        legendGroup.appendChild(label);
+      });
+    }
+
+    function render() {
+      renderArrows();
+      renderBoxes();
+      renderLabels();
+      renderLegend();
+    }
+
+    function getSVGPoint(e) {
+      const rect = canvas.getBoundingClientRect();
+      const scale = 1200 / rect.width;
+      return {
+        x: (e.clientX - rect.left) * scale,
+        y: (e.clientY - rect.top) * scale
+      };
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+      const target = e.target;
+      const boxId = target.dataset.boxId;
+      const labelId = target.dataset.labelId;
+      const handleType = target.dataset.handle;
+
+      if (handleType === 'resize' && boxId) {
+        const point = getSVGPoint(e);
+        const box = boxes[boxId];
+        dragging = {
+          type: 'resize',
+          id: boxId,
+          startX: point.x,
+          startY: point.y,
+          startWidth: box.width,
+          startHeight: box.height
         };
+        selectedBox = boxId;
+        document.getElementById('selected-box').textContent = boxId;
+        canvas.classList.add('dragging');
+      } else if (boxId) {
+        const point = getSVGPoint(e);
+        const box = boxes[boxId];
+        dragging = { type: 'box', id: boxId };
+        dragOffset = { x: point.x - box.x, y: point.y - box.y };
+        selectedBox = boxId;
+        document.getElementById('selected-box').textContent = boxId;
+        canvas.classList.add('dragging');
+      } else if (labelId && !autoPosition) {
+        const point = getSVGPoint(e);
+        const label = labels[labelId];
+        dragging = { type: 'label', id: labelId };
+        dragOffset = { x: point.x - label.x, y: point.y - label.y };
+        canvas.classList.add('dragging');
+      }
 
-        const arrows = [
-            { from: 'user', to: 'browser', style: 'arrow' },
-            { from: 'browser', to: 'backend', style: 'arrow-bold' },
-            { from: 'backend', to: 'anam', style: 'arrow' },
-            { from: 'browser', to: 'anam', style: 'arrow-bold' },
-            { from: 'mapbox', to: 'browser', style: 'arrow' },
-            { from: 'mapillary', to: 'browser', style: 'arrow' },
-            { from: 'media', to: 'backend', style: 'arrow' }
-        ];
+      render();
+    });
 
-        const labels = {
-            userToBrowser: { x: 220, y: 310, text: 'Clicks/voice', arrow: 'user-browser' },
-            browserToBackend: { x: 425, y: 455, text: ['1. Request', 'session token'], arrow: 'browser-backend' },
-            backendToAnam: { x: 570, y: 440, text: ['2. Mint token', '(API key)'], arrow: 'backend-anam' },
-            browserToAnam: { x: 610, y: 300, text: ['3. Start session', '(WebRTC + tools)'], arrow: 'browser-anam' },
-            mapboxToBrowser: { x: 230, y: 195, text: 'Map tiles', arrow: 'mapbox-browser' },
-            mapillaryToBrowser: { x: 365, y: 205, text: 'Street imagery', arrow: 'mapillary-browser' },
-            mediaToBackend: { x: 560, y: 560, text: 'Photos/videos', arrow: 'media-backend' }
-        };
+    canvas.addEventListener('mousemove', (e) => {
+      if (!dragging) return;
 
-        let dragging = null;
-        let dragOffset = { x: 0, y: 0 };
-        let selectedBox = null;
-        let autoPosition = false;
+      const point = getSVGPoint(e);
 
-        const canvas = document.getElementById('canvas');
-        const boxesGroup = document.getElementById('boxes');
-        const arrowsGroup = document.getElementById('arrows');
-        const labelsGroup = document.getElementById('labels');
+      if (dragging.type === 'box') {
+        const box = boxes[dragging.id];
+        box.x = point.x - dragOffset.x;
+        box.y = point.y - dragOffset.y;
+      } else if (dragging.type === 'label') {
+        const label = labels[dragging.id];
+        label.x = point.x - dragOffset.x;
+        label.y = point.y - dragOffset.y;
+      } else if (dragging.type === 'resize') {
+        const box = boxes[dragging.id];
+        const width = Math.max(MIN_BOX_WIDTH, dragging.startWidth + (point.x - dragging.startX));
+        const height = Math.max(MIN_BOX_HEIGHT, dragging.startHeight + (point.y - dragging.startY));
+        box.width = width;
+        box.height = height;
+      }
 
-        function getBoxCenter(boxId) {
-            const box = boxes[boxId];
-            return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
-        }
+      render();
+    });
 
-        function getBoxEdge(fromBoxId, toBoxId) {
-            const from = boxes[fromBoxId];
-            const to = boxes[toBoxId];
+    canvas.addEventListener('mouseup', () => {
+      dragging = null;
+      canvas.classList.remove('dragging');
+    });
 
-            const fromCenter = { x: from.x + from.width / 2, y: from.y + from.height / 2 };
-            const toCenter = { x: to.x + to.width / 2, y: to.y + to.height / 2 };
+    canvas.addEventListener('mouseleave', () => {
+      dragging = null;
+      canvas.classList.remove('dragging');
+    });
 
-            const dx = toCenter.x - fromCenter.x;
-            const dy = toCenter.y - fromCenter.y;
-            const angle = Math.atan2(dy, dx);
+    document.getElementById('auto-position-btn').addEventListener('click', () => {
+      autoPosition = !autoPosition;
+      const btn = document.getElementById('auto-position-btn');
+      btn.textContent = autoPosition ? 'Auto-position on' : 'Auto-position labels';
+      btn.classList.toggle('active', autoPosition);
+      render();
+    });
 
-            // Calculate intersection with box edges
-            const fromEdge = getEdgeIntersection(from, angle);
-            const toEdge = getEdgeIntersection(to, angle + Math.PI);
+    document.getElementById('export-btn').addEventListener('click', () => {
+      const svgElement = canvas.cloneNode(true);
+      svgElement.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+      svgElement.querySelectorAll('[data-handle="resize"]').forEach((handle) => handle.remove());
 
-            return {
-                from: { x: fromCenter.x + fromEdge.x, y: fromCenter.y + fromEdge.y },
-                to: { x: toCenter.x + toEdge.x, y: toCenter.y + toEdge.y }
-            };
-        }
+      const serializer = new XMLSerializer();
+      const svgString = serializer.serializeToString(svgElement);
 
-        function getEdgeIntersection(box, angle) {
-            const dx = Math.cos(angle);
-            const dy = Math.sin(angle);
+      const blob = new Blob([svgString], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'anam-architecture-diagram.svg';
+      link.click();
+      URL.revokeObjectURL(url);
+    });
 
-            const halfWidth = box.width / 2;
-            const halfHeight = box.height / 2;
-
-            // Find smallest positive t for intersection
-            let t = Infinity;
-
-            if (Math.abs(dx) > 0.001) {
-                const tX = dx > 0 ? halfWidth / dx : -halfWidth / dx;
-                if (tX > 0) t = Math.min(t, tX);
-            }
-
-            if (Math.abs(dy) > 0.001) {
-                const tY = dy > 0 ? halfHeight / dy : -halfHeight / dy;
-                if (tY > 0) t = Math.min(t, tY);
-            }
-
-            return { x: dx * t, y: dy * t };
-        }
-
-        function renderArrows() {
-            arrowsGroup.innerHTML = '';
-            arrows.forEach(arrow => {
-                const { from, to } = getBoxEdge(arrow.from, arrow.to);
-                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-                path.setAttribute('d', `M ${from.x},${from.y} L ${to.x},${to.y}`);
-                path.setAttribute('class', arrow.style);
-                arrowsGroup.appendChild(path);
-            });
-        }
-
-        function renderBoxes() {
-            boxesGroup.innerHTML = '';
-            Object.keys(boxes).forEach(id => {
-                const box = boxes[id];
-                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-
-                const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-                rect.setAttribute('x', box.x);
-                rect.setAttribute('y', box.y);
-                rect.setAttribute('width', box.width);
-                rect.setAttribute('height', box.height);
-                rect.setAttribute('rx', 12);
-                rect.setAttribute('class', `box ${box.style} ${selectedBox === id ? 'selected' : ''}`);
-                rect.dataset.boxId = id;
-
-                const title = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                title.setAttribute('x', box.x + box.width / 2);
-                title.setAttribute('y', box.y + 30);
-                title.setAttribute('text-anchor', 'middle');
-                title.setAttribute('class', 'text-main');
-                title.textContent = box.title;
-
-                g.appendChild(rect);
-                g.appendChild(title);
-
-                box.subtitle.forEach((line, i) => {
-                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                    text.setAttribute('x', box.x + box.width / 2);
-                    text.setAttribute('y', box.y + 50 + i * 15);
-                    text.setAttribute('text-anchor', 'middle');
-                    text.setAttribute('class', 'text-small');
-                    text.textContent = line;
-                    g.appendChild(text);
-                });
-
-                boxesGroup.appendChild(g);
-            });
-        }
-
-        function getAutoLabelPosition(labelId) {
-            const label = labels[labelId];
-            if (!label.arrow) return { x: label.x, y: label.y };
-
-            const [from, to] = label.arrow.split('-');
-            if (!boxes[from] || !boxes[to]) return { x: label.x, y: label.y };
-
-            const fromCenter = getBoxCenter(from);
-            const toCenter = getBoxCenter(to);
-
-            return {
-                x: (fromCenter.x + toCenter.x) / 2,
-                y: (fromCenter.y + toCenter.y) / 2 - 10
-            };
-        }
-
-        function renderLabels() {
-            labelsGroup.innerHTML = '';
-            Object.keys(labels).forEach(id => {
-                const label = labels[id];
-                const pos = autoPosition ? getAutoLabelPosition(id) : { x: label.x, y: label.y };
-                const text = Array.isArray(label.text) ? label.text : [label.text];
-
-                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-
-                const bg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-                bg.setAttribute('x', pos.x - 45);
-                bg.setAttribute('y', pos.y - 10);
-                bg.setAttribute('width', 90);
-                bg.setAttribute('height', text.length * 12 + 8);
-                bg.setAttribute('rx', 4);
-                bg.setAttribute('class', 'label-bg');
-                bg.dataset.labelId = id;
-
-                g.appendChild(bg);
-
-                text.forEach((line, i) => {
-                    const t = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-                    t.setAttribute('x', pos.x);
-                    t.setAttribute('y', pos.y + i * 12);
-                    t.setAttribute('text-anchor', 'middle');
-                    t.setAttribute('class', 'text-small');
-                    t.textContent = line;
-                    g.appendChild(t);
-                });
-
-                labelsGroup.appendChild(g);
-            });
-        }
-
-        function render() {
-            renderArrows();
-            renderBoxes();
-            renderLabels();
-        }
-
-        function getSVGPoint(e) {
-            const rect = canvas.getBoundingClientRect();
-            const scale = 1000 / rect.width;
-            return {
-                x: (e.clientX - rect.left) * scale,
-                y: (e.clientY - rect.top) * scale
-            };
-        }
-
-        canvas.addEventListener('mousedown', (e) => {
-            const target = e.target;
-            const boxId = target.dataset.boxId;
-            const labelId = target.dataset.labelId;
-
-            if (boxId) {
-                const point = getSVGPoint(e);
-                const box = boxes[boxId];
-                dragging = { type: 'box', id: boxId };
-                dragOffset = { x: point.x - box.x, y: point.y - box.y };
-                selectedBox = boxId;
-                document.getElementById('selected-box').textContent = boxId;
-                canvas.classList.add('dragging');
-            } else if (labelId && !autoPosition) {
-                const point = getSVGPoint(e);
-                const label = labels[labelId];
-                dragging = { type: 'label', id: labelId };
-                dragOffset = { x: point.x - label.x, y: point.y - label.y };
-                canvas.classList.add('dragging');
-            }
-
-            render();
-        });
-
-        canvas.addEventListener('mousemove', (e) => {
-            if (!dragging) return;
-
-            const point = getSVGPoint(e);
-
-            if (dragging.type === 'box') {
-                const box = boxes[dragging.id];
-                box.x = point.x - dragOffset.x;
-                box.y = point.y - dragOffset.y;
-            } else if (dragging.type === 'label') {
-                const label = labels[dragging.id];
-                label.x = point.x - dragOffset.x;
-                label.y = point.y - dragOffset.y;
-            }
-
-            render();
-        });
-
-        canvas.addEventListener('mouseup', () => {
-            dragging = null;
-            canvas.classList.remove('dragging');
-        });
-
-        canvas.addEventListener('mouseleave', () => {
-            dragging = null;
-            canvas.classList.remove('dragging');
-        });
-
-        document.getElementById('auto-position-btn').addEventListener('click', () => {
-            autoPosition = !autoPosition;
-            const btn = document.getElementById('auto-position-btn');
-            btn.textContent = autoPosition ? '✓ Auto-position labels' : 'Auto-position labels';
-            btn.classList.toggle('active', autoPosition);
-            render();
-        });
-
-        document.getElementById('export-btn').addEventListener('click', () => {
-            const svgElement = canvas.cloneNode(true);
-            svgElement.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-
-            const serializer = new XMLSerializer();
-            const svgString = serializer.serializeToString(svgElement);
-
-            const blob = new Blob([svgString], { type: 'image/svg+xml' });
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = 'anam-architecture-diagram.svg';
-            link.click();
-            URL.revokeObjectURL(url);
-        });
-
-        // Initial render
-        render();
-    </script>
+    render();
+  </script>
 </body>
 
 </html>

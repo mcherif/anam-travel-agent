@@ -1,0 +1,126 @@
+<svg id="canvas" viewBox="0 0 1200 720" class="" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+          <polygon points="0 0, 10 3, 0 6" fill="#64748b"/>
+        </marker>
+        <marker id="arrowhead-bold" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+          <polygon points="0 0, 10 3, 0 6" fill="#2563eb"/>
+        </marker>
+        <marker id="arrowhead-media" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+          <polygon points="0 0, 10 3, 0 6" fill="#16a34a"/>
+        </marker>
+      </defs>
+
+      <style id="diagram-styles">
+        .box {
+          fill: #ffffff;
+          stroke: #cbd5f5;
+          stroke-width: 1.4;
+          filter: drop-shadow(0 6px 10px rgba(15, 23, 42, 0.12));
+          cursor: move;
+        }
+
+        .box.selected {
+          stroke: #2563eb;
+          stroke-width: 3;
+        }
+
+        .box.main-box {
+          fill: #e0f2fe;
+          stroke: #2563eb;
+          stroke-width: 2;
+        }
+
+        .box.platform-box {
+          fill: #dbeafe;
+          stroke: #2563eb;
+          stroke-width: 1.6;
+        }
+
+        .box.backend-box {
+          fill: #f1f5f9;
+          stroke: #64748b;
+          stroke-width: 1.4;
+        }
+
+        .box.auxiliary-box {
+          fill: #f8fafc;
+          stroke: #cbd5e1;
+          stroke-width: 1.2;
+        }
+
+        .text-main {
+          font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+          font-size: 14px;
+          fill: #0f172a;
+          font-weight: 600;
+          pointer-events: none;
+          user-select: none;
+        }
+
+        .text-small {
+          font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+          font-size: 11px;
+          fill: #475569;
+          pointer-events: none;
+          user-select: none;
+        }
+
+        .arrow {
+          stroke: #64748b;
+          stroke-width: 1.6;
+          fill: none;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          marker-end: url(#arrowhead);
+        }
+
+        .arrow-bold {
+          stroke: #2563eb;
+          stroke-width: 2.2;
+          fill: none;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          marker-end: url(#arrowhead-bold);
+        }
+
+        .arrow-media {
+          stroke: #16a34a;
+          stroke-width: 2;
+          fill: none;
+          stroke-linecap: round;
+          stroke-linejoin: round;
+          marker-end: url(#arrowhead-media);
+        }
+
+        .label-bg {
+          fill: rgba(248, 250, 252, 0.95);
+          stroke: #e2e8f0;
+          stroke-width: 1;
+          cursor: move;
+        }
+
+        .resize-handle {
+          fill: #ffffff;
+          stroke: #94a3b8;
+          stroke-width: 1.2;
+          cursor: se-resize;
+        }
+      </style>
+
+      <text x="600" y="36" text-anchor="middle" style="font-family: 'IBM Plex Sans', 'Segoe UI', sans-serif; font-size: 22px; fill: #0f172a; font-weight: 700;">
+        Anam Travel Agent Architecture
+      </text>
+      <text x="600" y="58" text-anchor="middle" style="font-family: 'IBM Plex Sans', 'Segoe UI', sans-serif; font-size: 12px; fill: #475569;">
+        Persona-driven UI orchestration across browser, backend, and media services
+      </text>
+
+      <g id="boxes"><g><rect x="57.34375" y="297.96875" width="130" height="90" rx="14" class="box box " data-box-id="user"/><text x="122.34375" y="327.96875" text-anchor="middle" class="text-main">Traveler</text><text x="122.34375" y="347.96875" text-anchor="middle" class="text-small">Voice or text</text><text x="122.34375" y="363.96875" text-anchor="middle" class="text-small">in the browser</text></g><g><rect x="181.09375" y="135.625" width="160" height="70" rx="14" class="box auxiliary-box " data-box-id="data"/><text x="261.09375" y="165.625" text-anchor="middle" class="text-main">Landmarks DB</text><text x="261.09375" y="185.625" text-anchor="middle" class="text-small">Curated metadata</text></g><g><rect x="320" y="285" width="211.71875" height="117.8125" rx="14" class="box main-box " data-box-id="browser"/><text x="425.859375" y="315" text-anchor="middle" class="text-main">Browser UI</text><text x="425.859375" y="335" text-anchor="middle" class="text-small">React app + Mapbox GL</text><text x="425.859375" y="351" text-anchor="middle" class="text-small">Anam JS SDK</text><text x="425.859375" y="367" text-anchor="middle" class="text-small">UI orchestrator + tool handlers</text><text x="425.859375" y="383" text-anchor="middle" class="text-small">State sync + media overlay</text></g><g><rect x="768.59375" y="280.78125" width="180" height="111.25" rx="14" class="box platform-box selected" data-box-id="anam"/><text x="858.59375" y="310.78125" text-anchor="middle" class="text-main">Anam Platform</text><text x="858.59375" y="330.78125" text-anchor="middle" class="text-small">LLM (persona logic)</text><text x="858.59375" y="346.78125" text-anchor="middle" class="text-small">TTS + voice stream</text><text x="858.59375" y="362.78125" text-anchor="middle" class="text-small">Avatar video + lip sync</text><text x="858.59375" y="378.78125" text-anchor="middle" class="text-small">Tool call routing</text></g><g><rect x="340" y="492.8125" width="180" height="110" rx="14" class="box backend-box " data-box-id="backend"/><text x="430" y="522.8125" text-anchor="middle" class="text-main">Backend API</text><text x="430" y="542.8125" text-anchor="middle" class="text-small">Session token minting</text><text x="430" y="558.8125" text-anchor="middle" class="text-small">Media search proxy</text><text x="430" y="574.8125" text-anchor="middle" class="text-small">Keeps API keys server-side</text></g><g><rect x="348.4375" y="105.78125" width="150" height="70" rx="14" class="box auxiliary-box " data-box-id="mapbox"/><text x="423.4375" y="135.78125" text-anchor="middle" class="text-main">Mapbox</text><text x="423.4375" y="155.78125" text-anchor="middle" class="text-small">Tiles + styles</text></g><g><rect x="503.90625" y="134.84375" width="150" height="70" rx="14" class="box auxiliary-box " data-box-id="mapillary"/><text x="578.90625" y="164.84375" text-anchor="middle" class="text-main">Mapillary</text><text x="578.90625" y="184.84375" text-anchor="middle" class="text-small">Street imagery</text></g><g><rect x="732.5" y="486.71875" width="184.0625" height="110" rx="14" class="box auxiliary-box " data-box-id="media"/><text x="824.53125" y="516.71875" text-anchor="middle" class="text-main">Media Providers</text><text x="824.53125" y="536.71875" text-anchor="middle" class="text-small">Pexels (photos + video)</text><text x="824.53125" y="552.71875" text-anchor="middle" class="text-small">Openverse (photos)</text></g></g>
+      <g id="arrows"><path d="M 187.34375,343.1695222007722 L 320,343.5792712355212" class="arrow"/><path d="M 294.3737319657349,205.625 L 369.8479767808837,285" class="arrow"/><path d="M 423.8548076923077,175.78125 L 425.15703125,285" class="arrow"/><path d="M 548.132013016158,204.84375 L 477.6535149236984,285" class="arrow"/><path d="M 427.05555555555554,402.8125 L 428.8831417624521,492.8125" class="arrow"/><path d="M 520,503.41949963543567 L 768.59375,380.79925036456433" class="arrow"/><path d="M 531.71875,342.0715325419751 L 768.59375,337.9660983480773" class="arrow-bold"/><path d="M 768.59375,337.9660983480773 L 531.71875,342.0715325419751" class="arrow-bold"/><path d="M 520,546.422400990099 L 732.5,543.1402227722773" class="arrow-media"/></g>
+      <g id="labels"><g><rect x="194.84375" y="315.1875" width="120" height="22" rx="4" class="label-bg" data-label-id="userToBrowser"/><text x="254.84375" y="327.1875" text-anchor="middle" class="text-small">User input</text></g><g><rect x="254.0625" y="228.46875" width="120" height="22" rx="4" class="label-bg" data-label-id="dataToBrowser"/><text x="314.0625" y="240.46875" text-anchor="middle" class="text-small">Curated data</text></g><g><rect x="370.15625" y="189.875" width="120" height="22" rx="4" class="label-bg" data-label-id="mapboxToBrowser"/><text x="430.15625" y="201.875" text-anchor="middle" class="text-small">Map tiles</text></g><g><rect x="462.03125" y="233" width="120" height="22" rx="4" class="label-bg" data-label-id="mapillaryToBrowser"/><text x="522.03125" y="245" text-anchor="middle" class="text-small">Street imagery</text></g><g><rect x="369.84375" y="428.9375" width="120" height="36" rx="4" class="label-bg" data-label-id="browserToBackend"/><text x="429.84375" y="440.9375" text-anchor="middle" class="text-small">Token + media</text><text x="429.84375" y="454.9375" text-anchor="middle" class="text-small">requests</text></g><g><rect x="590.78125" y="429.40625" width="120" height="22" rx="4" class="label-bg" data-label-id="backendToAnam"/><text x="650.78125" y="441.40625" text-anchor="middle" class="text-small">Token minting</text></g><g><rect x="595.3125" y="296.4375" width="120" height="36" rx="4" class="label-bg" data-label-id="browserToAnam"/><text x="655.3125" y="308.4375" text-anchor="middle" class="text-small">WebRTC A/V</text><text x="655.3125" y="322.4375" text-anchor="middle" class="text-small">+ tool events</text></g><g><rect x="581.875" y="511.90625" width="120" height="22" rx="4" class="label-bg" data-label-id="backendToMedia"/><text x="641.875" y="523.90625" text-anchor="middle" class="text-small">Media search</text></g></g>
+      <g id="legend"><rect x="820" y="80" width="300" height="96" rx="12" fill="#ffffff" stroke="#e2e8f0"/><text x="840" y="104" class="text-small">Legend</text><line x1="840" y1="124" x2="900" y2="124" class="arrow"/><text x="910" y="128" class="text-small">Control / config</text><line x1="840" y1="142" x2="900" y2="142" class="arrow-bold"/><text x="910" y="146" class="text-small">Realtime session</text><line x1="840" y1="160" x2="900" y2="160" class="arrow-media"/><text x="910" y="164" class="text-small">Media fetch</text></g>
+
+      <text x="40" y="690" style="font-family: 'IBM Plex Sans', 'Segoe UI', sans-serif; font-size: 10px; fill: #94a3b8;">
+        Data flow: User input -&gt; Browser UI -&gt; Backend token -&gt; Anam session -&gt; Tool calls -&gt; UI sync
+      </text>
+    </svg>

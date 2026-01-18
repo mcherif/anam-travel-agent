@@ -30,6 +30,10 @@ If the video does not render on GitHub, use this link and click **View raw** to 
 
 ## Architecture
 
+![Architecture diagram](architecture-diagram.svg)
+
+Editable source: `docs/editable-diagram.html`
+
 ```
 User Browser
   - React UI + Mapbox GL
