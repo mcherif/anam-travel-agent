@@ -2,7 +2,7 @@
 
 ## Overview
 
-This demo showcases sophisticated UI synchronization with [Anam](https://anam.ai)'s AI personas. As the travel agent persona (Sofia) describes landmarks in Tunis, the map automatically zooms, highlights, and displays information about each location in real time, synchronized with her speech.
+This demo showcases synchronized UI choreography between an Anam persona and a live 3D map. As the persona speaks, the app flies to landmarks, highlights them, and opens contextual panels and media.
 
 ## Preview
 
@@ -12,111 +12,59 @@ This demo showcases sophisticated UI synchronization with [Anam](https://anam.ai
 
 If the video does not render on GitHub, use this link and click **View raw** to download: [Watch the demo video](Anam-travel-assistant-2.mp4)
 
-## Key Features
-
-### 1. Speech-Synchronized Map Highlighting
-- As Sofia mentions "Medina of Tunis", the map zooms to the Medina and displays details
-- Landmarks appear progressively as they are mentioned in the conversation
-- Smooth animations and transitions create a cinematic experience
-
-### 2. Tool-Driven Orchestration (No Local LLM)
-- Uses Anam-hosted LLM with Client Tools to trigger deterministic UI actions
-- Keeps orchestration logic in the frontend, where timing is easiest to manage
-
-### 3. Real-Time UI Orchestration
-- Listens to Anam events for tool calls and speech state
-- Coordinates map animations with the persona in real time
-- Handles interruptions and resumes cleanly
-
 ## Architecture
 
 ![Architecture diagram](architecture-diagram.svg)
 
 Editable source: `docs/editable-diagram.html`
 
-```
-User Browser
-  - React UI + Mapbox GL
-  - [Anam SDK](https://docs.anam.ai) (persona, tools, events)
-  - UI Orchestrator (tool handlers)
-
-Backend (recommended)
-  - Session token endpoint (keeps API key off the client)
-
-Anam Servers
-  - LLM + TTS + video generation
-```
+- Browser UI (React + Mapbox GL) orchestrates map, panels, and media.
+- Backend API mints Anam session tokens and proxies media search.
+- Anam Platform handles LLM, TTS, avatar video, and tool calls.
+- Media providers: Pexels (photos + video) and Openverse (photos).
+- Map providers: Mapbox tiles, Mapillary street imagery (optional).
 
 ## Prerequisites
 
 1. Node.js (v16+)
 2. Anam API key (from lab.anam.ai)
-3. Mapbox API token (from mapbox.com)
+3. Mapbox API token
+4. Optional: Pexels API key for live photos/videos
+5. Optional: Mapillary token for street imagery
 
-## Installation
+## Setup
 
-For step-by-step setup, see `docs/QUICKSTART.md`.
-
-### Step 1: Create a Session Token Backend
-
-You need a backend endpoint to exchange your Anam API key for session tokens. The persona config can be included here or set in the client before streaming.
-
-```javascript
-// Example Express.js endpoint
-app.post('/api/anam/session-token', async (req, res) => {
-  const { personaConfig, clientLabel } = req.body;
-
-  try {
-    const payload = {
-      clientLabel: clientLabel || 'anam-travel-agent'
-    };
-    if (personaConfig) {
-      payload.personaConfig = personaConfig;
-    }
-
-    const response = await fetch('https://api.anam.ai/v1/auth/session-token', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.ANAM_API_KEY}`,
-      },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await response.json();
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to get session token' });
-  }
-});
-```
-
-### Step 2: Set Up Frontend
-
-Install dependencies:
+### Install dependencies
 
 ```bash
-npm install @anam-ai/js-sdk mapbox-gl framer-motion
+cd backend
+npm install
+cd ../frontend
+npm install
 ```
 
-### Step 3: Configure Environment Variables
+Or run `.\run-anam-travel.cmd -Install` from the repo root (Windows).
 
-Create a `.env` file:
+### Configure environment variables
+
+Create `.env` files in `backend/` and `frontend/`:
 
 ```bash
-# Backend
+# backend
 ANAM_API_KEY=your_anam_api_key_here
 PORT=3001
 CORS_ORIGINS=http://localhost:3000
-OPENVERSE_API_URL=https://api.openverse.org/v1/images
-OPENVERSE_LICENSE_TYPE=all
-PEXELS_API_KEY=
-PEXELS_API_URL=https://api.pexels.com/v1/search
-PEXELS_VIDEO_API_URL=https://api.pexels.com/videos/search
 PHOTO_PROVIDER=auto
 VIDEO_PROVIDER=pexels
+PEXELS_API_KEY=
 
-# Frontend
+# Optional provider overrides
+OPENVERSE_API_URL=https://api.openverse.org/v1/images
+OPENVERSE_LICENSE_TYPE=all
+PEXELS_API_URL=https://api.pexels.com/v1/search
+PEXELS_VIDEO_API_URL=https://api.pexels.com/videos/search
+
+# frontend
 VITE_MAPBOX_TOKEN=your_mapbox_token_here
 VITE_BACKEND_URL=http://localhost:3001
 VITE_CITY=tunis
@@ -128,24 +76,23 @@ VITE_PHOTO_PROVIDER=auto
 VITE_VIDEO_PROVIDER=pexels
 ```
 
-Set `VITE_CITY` to `tunis` or `istanbul` to choose the default city.
-Set `VITE_MAPILLARY_TOKEN` to enable street-level imagery (Mapillary).
-Set `VITE_LIVE_PHOTOS=true` to fetch live photos from Openverse/Pexels.
-Set `PHOTO_PROVIDER=auto|openverse|pexels` (backend) and `VITE_PHOTO_PROVIDER` to the same value.
-Set `VIDEO_PROVIDER=pexels` (backend) and `VITE_VIDEO_PROVIDER=pexels` to enable live video search.
+Notes:
+- Set `VITE_CITY` to `tunis` or `istanbul` to choose the default city.
+- Set `VITE_MAPILLARY_TOKEN` to enable street-level imagery.
+- Set `VITE_LIVE_PHOTOS=true` to fetch live media.
+- Keep `PHOTO_PROVIDER` and `VITE_PHOTO_PROVIDER` aligned when using live photos.
+- Video search is currently supported via Pexels (`VIDEO_PROVIDER=pexels`).
 
-## Usage
+## Running
 
-1. Start the session token backend
-2. Start your React app
-   - Or run `.\run-anam-travel.cmd` from the repo root to start both (use `-Install` once).
-3. (Optional) Set `VITE_CITY=istanbul` to switch the default city
-4. Click "Start Your Journey"
-5. Ask Sofia about the city: "Tell me about Tunis"
-6. Watch as landmarks are highlighted in sync with her speech
-7. To open the media overlay, ask for photos or video (e.g., "Show me a video of the Medina"), or use the debug buttons when `VITE_DEMO_MODE=false`.
+1. Start backend and frontend:
+   - `.\run-anam-travel.cmd` (Windows), or
+   - `npm start` in `backend/` and `npm run dev` in `frontend/`
+2. Open http://localhost:3000
+3. Click "Start Your Journey"
+4. Ask Sofia about a city or landmark
 
-### Example Queries
+### Example queries
 
 - "Tell me about Tunis"
 - "What can I see in the Medina?"
@@ -153,9 +100,9 @@ Set `VIDEO_PROVIDER=pexels` (backend) and `VITE_VIDEO_PROVIDER=pexels` to enable
 - "What's the most beautiful spot in Tunis?"
 - "I'm interested in historical sites"
 
-## How the Synchronization Works
+## How synchronization works
 
-### 1. Tool Calls Drive the UI
+### Tool calls drive the UI
 
 The persona is configured with Client Tools. When Sofia decides to highlight a landmark, she calls a tool like `fly_to_landmark`, `show_landmark_panel`, or `show_media`.
 
@@ -168,9 +115,9 @@ client.addListener(AnamEvent.CLIENT_TOOL_EVENT_RECEIVED, (event) => {
 
 If your SDK still emits `TOOL_CALL`, register that event too and pass the same handler.
 
-### 2. Real-Time Speech Tracking
+### Real-time speech tracking
 
-The UI can react to speech state for indicators and interruptions.
+The UI reacts to speech state for indicators and interruptions.
 
 ```javascript
 client.addListener(AnamEvent.MESSAGE_STREAM_EVENT_RECEIVED, (event) => {
@@ -180,39 +127,24 @@ client.addListener(AnamEvent.MESSAGE_STREAM_EVENT_RECEIVED, (event) => {
 });
 ```
 
-### 3. Synchronized UI Updates
+### Synchronized UI updates
 
-The orchestrator performs the actual UI choreography.
+The orchestrator performs the actual choreography.
 
 ```javascript
 await orchestrator.handleToolCall('fly_to_landmark', { id: 'medina', zoom: 15 });
 ```
 
-### 4. Media Sync (Photos + Video)
+## Media behavior
 
-Landmark photos update when `show_landmark_panel` is called. The panel rotates through:
-- Local images from `frontend/src/data/landmarks_db.json`
-- Optional live images fetched from the backend `/api/photos` endpoint
-
-When live photos are enabled (`VITE_LIVE_PHOTOS=true`), the frontend queries the backend with
-`{landmark name} + {city name}` and merges those results ahead of the local rotation. If the
-live fetch fails or returns no results, the UI automatically falls back to local assets.
-
-Live photo providers are configured via:
-- Backend: `PHOTO_PROVIDER=auto|openverse|pexels`
-- Frontend: `VITE_PHOTO_PROVIDER=auto|openverse|pexels`
-
-The `show_media({ id, kind })` tool opens a full-screen overlay with Photos/Video tabs.
-Video search is handled by `/api/videos` (Pexels) using `{landmark name} + {city} + {country}`
-and falls back to photos if no videos are found.
-
-Live video providers are configured via:
-- Backend: `VIDEO_PROVIDER=pexels`
-- Frontend: `VITE_VIDEO_PROVIDER=pexels`
+- Curated media and search hints live in `frontend/src/data/landmarks_db.json`.
+- Landmarks can define `imageUrls`, `videoUrl`, `photoQuery`, `videoQuery`, `videoInclude`, `videoExclude`, and `photoExclude`.
+- When `VITE_LIVE_PHOTOS=true`, the frontend merges live results from `/api/photos` and `/api/videos` with the curated URLs.
+- If live search returns nothing, the UI falls back to curated media.
 
 ## Customization
 
-### Adding New Locations
+### Adding new locations
 
 Edit `frontend/src/data/landmarks_db.json`:
 
@@ -237,88 +169,37 @@ Edit `frontend/src/data/landmarks_db.json`:
 }
 ```
 
-### Customizing the Persona
+### Customizing the persona
 
-Modify the system prompt in `frontend/src/components/TravelAgentDemo.tsx` and adjust tool descriptions and usage guidance.
-
-## Performance Optimization
-
-### Reduce Latency
-
-1. Keep responses concise (2 to 4 sentences per landmark)
-2. Preload landmark data in the frontend
-3. Reduce map detail if needed for smoother animation
-4. Keep tool calls deterministic with clear prompt guidance
-
-### Improve Quality
-
-1. Add more context to the system prompt
-2. Improve landmark descriptions and highlights
-3. Tune tool descriptions to reduce missed calls
+Update the system prompt and persona config in `frontend/src/components/TravelAgentDemo.tsx`.
 
 ## Troubleshooting
 
-### Landmarks Not Highlighting
+### Map not rendering
 
-1. Check browser console for errors
-2. Verify landmark IDs match tool parameters
-3. Confirm tools are defined in the persona config
-4. Check Mapbox token is valid
-5. For map-only debugging, set `VITE_TOOL_FALLBACK=true` and `VITE_DEMO_MODE=false` to run a scripted tool sequence
+1. Verify the Mapbox token is present and valid.
+2. Check browser console for errors.
+3. Ensure hardware acceleration is enabled if the map appears black.
 
-### Anam Connection Issues
+### Anam connection issues
 
-1. Verify API key is correct
-2. Check session token endpoint is working
-3. Ensure CORS is configured properly
-4. Check browser console for WebRTC errors
+1. Confirm the backend is running and reachable at `VITE_BACKEND_URL`.
+2. Verify `ANAM_API_KEY` and CORS settings.
+3. Check the browser console for WebRTC errors.
 
-## What Makes This Impressive
+### Media relevance issues
 
-### 1. Novel Use of Anam Features
-- Goes beyond documented examples
-- Uses Client Tools for deterministic choreography
-- Shows creative thinking about UI and voice
+1. Tune `photoQuery` and `videoQuery` per landmark.
+2. Update `videoInclude`/`videoExclude` and `photoExclude` to filter noisy results.
 
-### 2. Technical Sophistication
-- Real-time event driven synchronization
-- Tool-first architecture with clean boundaries
-- Smooth animation choreography
+## Roadmap
 
-### 3. Production-Ready Quality
-- Error handling
-- Performance optimization
-- Responsive design
-- Polished UI and UX
-
-### 4. Demonstrates Deep Understanding
-- Understands Anam's architecture
-- Knows when to use client-side orchestration
-- Thinks about latency and user experience
-
-## Next Steps
-
-### Enhancements to Consider
-
-1. Multi-city support
-2. User preferences
-3. 3D landmark models
-4. Route planning between landmarks
-5. Weather integration
-6. Photo gallery expansions
-7. User reviews and ratings
-8. Booking integrations
-9. Dynamic landmark discovery (e.g., Wikidata/OSM search + tool schema refresh)
-10. Personalization moment: prompt for a vibe (history, food, aesthetic photos, budget-friendly), then update itinerary + media queries via `set_preferences({ vibe, walking_level, budget })` and `generate_itinerary({ ... })` (client-only mock)
-
-### Advanced Features
-
-1. Voice commands
-2. Gesture control
-3. AR mode
-4. Multi-language support
-5. Offline mode for maps
-6. Social sharing
+1. Expand curated media coverage with verified, relevant sources.
+2. Improve media relevance filters per landmark.
+3. Add additional cities and landmark packs.
+4. Layout modes for intro, tour, and wrap-up states.
+5. Preference-driven itineraries (vibe, walking level, budget).
+6. Optional low-bandwidth / map-performance presets.
 
 ## License
 
