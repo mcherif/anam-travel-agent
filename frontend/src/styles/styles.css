@@ -8,9 +8,14 @@
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --persona-width: clamp(320px, 42vw, 720px);
   --persona-height: clamp(520px, 90vh, 980px);
-  --persona-opacity: 0.7;
+  --persona-opacity: 0;
   --persona-offset: 16px;
 }
+
+.travel-agent-container.anam-ready {
+  --persona-opacity: 0.7;
+}
+
 
 .travel-agent-container.layout-intro {
   --persona-width: clamp(360px, 52vw, 860px);
@@ -34,23 +39,31 @@
   left: var(--persona-offset);
   width: var(--persona-width);
   height: var(--persona-height);
-  background: rgba(15, 23, 42, 0.08);
-  backdrop-filter: blur(6px);
+  background: transparent;
+  backdrop-filter: none;
   border-radius: 24px;
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
+  box-shadow: none;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 900;
-  transition: width 0.6s ease, height 0.6s ease;
+  transition: width 0.6s ease, height 0.6s ease, background 0.3s ease, backdrop-filter 0.3s ease, box-shadow 0.3s ease;
 }
+
+.travel-agent-container.anam-ready .persona-container {
+  background: rgba(15, 23, 42, 0.08);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
+}
+
 
 .persona-video {
   width: 100%;
   height: 100%;
   object-fit: cover;
   opacity: var(--persona-opacity);
+  transition: opacity 0.35s ease;
 }
 
 .user-video-preview {
@@ -63,7 +76,7 @@
   overflow: hidden;
   border: 2px solid rgba(255, 255, 255, 0.9);
   box-shadow: 0 10px 24px rgba(15, 23, 42, 0.35);
-  background: #0f172a;
+  background: transparent;
   z-index: 120;
 }
 
@@ -233,7 +246,7 @@
   border-radius: 20px;
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid rgba(148, 163, 184, 0.35);
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35);
+  box-shadow: none;
   backdrop-filter: blur(8px);
 }
 
@@ -789,7 +802,7 @@
 .media-card {
   width: min(900px, 92vw);
   max-height: 90vh;
-  background: #0f172a;
+  background: transparent;
   color: #f8fafc;
   border-radius: 18px;
   box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);

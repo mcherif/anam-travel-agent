@@ -2,15 +2,15 @@
 
 ## Overview
 
-This demo showcases synchronized UI choreography between an Anam persona and a live 3D map. As the persona speaks, the app flies to landmarks, highlights them, and opens contextual panels and media.
+This demo showcases synchronized UI choreography between an Anam persona and a live 3D terrain view. As the persona speaks, the app flies to landmarks, highlights them, and opens contextual panels and media.
 
 ## Preview
 
-<img src="Anam-travel-assistant-snapshot-2.png" alt="Anam travel assistant preview" width="720">
+<img src="Anam-travel-assistant-snapshot.png" alt="Anam travel assistant preview" width="720">
 
-<video src="Anam-travel-assistant-2.mp4" controls width="720"></video>
+<video src="anam-travel-agent-demo.mp4" controls width="720"></video>
 
-If the video does not render on GitHub, use this link and click **View raw** to download: [Watch the demo video](Anam-travel-assistant-2.mp4)
+If the video does not render on GitHub, use this link and click **View raw** to download: [Watch the demo video](anam-travel-agent-demo.mp4)
 
 ## Architecture
 

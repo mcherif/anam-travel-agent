@@ -67,6 +67,11 @@ type DebugMetrics = {
 const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
 const BACKEND_URL = import.meta.env.VITE_BACKEND_URL as string | undefined;
 const MAPILLARY_TOKEN = import.meta.env.VITE_MAPILLARY_TOKEN as string | undefined;
+const MAPILLARY_BBOX_DELTA = 0.04;
+const MAPILLARY_FIELDS = 'id,thumb_1024_url,captured_at';
+const MAPILLARY_IS_PANO = 'false';
+const MAPILLARY_LIMIT = 5;
+const MAPILLARY_RADIUS_METERS = 300;
 const DEMO_MODE = import.meta.env.VITE_DEMO_MODE !== 'false';
 const MIC_TEST_MODE = import.meta.env.VITE_MIC_TEST === 'true';
 const TOOL_FALLBACK_MODE = import.meta.env.VITE_TOOL_FALLBACK === 'true';
@@ -443,7 +448,7 @@ const TravelAgentDemo = () => {
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [cameraPanelCollapsed, setCameraPanelCollapsed] = useState(true);
   const [layoutMode, setLayoutMode] = useState<LayoutMode>('tour');
-  const [mediaMode, setMediaMode] = useState<MediaMode>(LIVE_PHOTOS ? 'live' : 'curated');
+  const [mediaMode, setMediaMode] = useState<MediaMode>('live');
   const [liveImages, setLiveImages] = useState<ImageItem[]>([]);
   const [livePhotoStatus, setLivePhotoStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle');
   const [livePhotoError, setLivePhotoError] = useState<string | null>(null);
@@ -891,26 +896,51 @@ const TravelAgentDemo = () => {
     const fetchStreetView = async () => {
       setStreetViewStatus('loading');
       const [lng, lat] = currentLandmark.coordinates;
-      const endpoint = new URL('https://graph.mapillary.com/images');
-      endpoint.searchParams.set('access_token', MAPILLARY_TOKEN);
-      endpoint.searchParams.set('fields', 'id,thumb_1024_url');
-      endpoint.searchParams.set('closeto', `${lng},${lat}`);
-      endpoint.searchParams.set('limit', '1');
 
-      try {
+      const fetchMapillaryImage = async (params: Record<string, string>) => {
+        const endpoint = new URL('https://graph.mapillary.com/images');
+        endpoint.searchParams.set('access_token', MAPILLARY_TOKEN);
+        endpoint.searchParams.set('fields', MAPILLARY_FIELDS);
+        Object.entries(params).forEach(([key, value]) => endpoint.searchParams.set(key, value));
+
         const response = await fetch(endpoint.toString(), { signal: controller.signal });
         if (!response.ok) {
           throw new Error(`Mapillary error ${response.status}`);
         }
         const data = (await response.json()) as {
-          data?: Array<{ id?: string; thumb_1024_url?: string }>;
+          data?: Array<{ id?: string; thumb_1024_url?: string; captured_at?: number }>;
         };
-        const image = data?.data?.[0];
+        const candidates = (data?.data ?? []).filter((item) => item?.thumb_1024_url);
+        if (candidates.length == 0) {
+          return null;
+        }
+        candidates.sort((a, b) => (b.captured_at ?? 0) - (a.captured_at ?? 0));
+        return candidates[0]?.thumb_1024_url ?? null;
+      };
+
+      try {
+        const delta = MAPILLARY_BBOX_DELTA;
+        const bbox = `${lng - delta},${lat - delta},${lng + delta},${lat + delta}`;
+        let imageUrl = await fetchMapillaryImage({
+          bbox,
+          is_pano: MAPILLARY_IS_PANO,
+          limit: String(MAPILLARY_LIMIT)
+        });
+
+        if (!imageUrl) {
+          imageUrl = await fetchMapillaryImage({
+            closeto: `${lng},${lat}`,
+            radius: String(MAPILLARY_RADIUS_METERS),
+            limit: String(MAPILLARY_LIMIT)
+          });
+        }
+
         if (!isActive) {
           return;
         }
-        if (image?.thumb_1024_url) {
-          setStreetViewUrl(image.thumb_1024_url);
+
+        if (imageUrl) {
+          setStreetViewUrl(imageUrl);
           setStreetViewStatus('ready');
         } else {
           setStreetViewUrl(null);
@@ -935,7 +965,7 @@ const TravelAgentDemo = () => {
       isActive = false;
       controller.abort();
     };
-  }, [currentLandmark, MAPILLARY_TOKEN]);
+  }, [currentLandmark, MAPILLARY_TOKEN, streetViewEnabled]);
 
   useEffect(() => {
     if (!currentLandmark || !livePhotoEnabled) {
@@ -1902,7 +1932,7 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
   }
 
   return (
-    <div className={`travel-agent-container layout-${layoutMode}`}>
+    <div className={`travel-agent-container layout-${layoutMode} ${anamReady ? 'anam-ready' : 'anam-loading'}`}>
       <div className="persona-container">
         <video id="anam-video" autoPlay playsInline className="persona-video" />
 
