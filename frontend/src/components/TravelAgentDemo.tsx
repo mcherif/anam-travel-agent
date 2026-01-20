@@ -2597,23 +2597,6 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
                 </span>
               </div>
               <div className="manual-row">
-                <label className="manual-label" htmlFor="city-select">
-                  City
-                </label>
-                <select
-                  id="city-select"
-                  className="manual-input"
-                  value={selectedCity}
-                  onChange={(event) => switchCity(event.target.value as CityId)}
-                >
-                  {cityOptions.map((city) => (
-                    <option key={city.id} value={city.id}>
-                      {city.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="manual-row">
                 <input
                   className="manual-input"
                   value={manualMessage}
@@ -2625,7 +2608,7 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
               </div>
               <div className="manual-row manual-row-stack">
                 <label className="manual-label" htmlFor="debug-zoom">
-                  Debug zoom: {debugZoom.toFixed(1)}
+                  Map zoom: {debugZoom.toFixed(1)}
                 </label>
                 <input
                   id="debug-zoom"
