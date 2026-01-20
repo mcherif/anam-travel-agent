@@ -389,6 +389,7 @@ const MicTestView = () => {
 
 const TravelAgentDemo = () => {
   const manualDragControls = useDragControls();
+  const introDragControls = useDragControls();
   const initialCityId = getInitialCityId();
   const [selectedCity, setSelectedCity] = useState<CityId>(initialCityId);
   const cityData = getCityData(selectedCity);
@@ -2122,8 +2123,21 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
 
         {!isConnected && (
           <div className="start-panel">
-            <div className="launch-card">
-              <div className="launch-header">
+            <motion.div
+              drag
+              dragControls={introDragControls}
+              dragListener={false}
+              dragMomentum={false}
+              className="launch-card"
+              style={{ x: '-50%', y: '-50%' }}
+              initial={{ opacity: 0, scale: 0.9, x: '-50%', y: '-50%' }}
+              animate={{ opacity: 1, scale: 1, x: '-50%', y: '-50%' }}
+              exit={{ opacity: 0, scale: 0.9, x: '-50%', y: '-50%' }}
+            >
+              <div
+                className="launch-header"
+                onPointerDown={(e) => introDragControls.start(e)}
+              >
                 <span className="launch-eyebrow">Anam Travel Assistant</span>
                 <h2 className="launch-title">Choose a city to begin</h2>
                 <p className="launch-subtitle">Pick your camera and media mode before starting.</p>
@@ -2191,8 +2205,8 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
               <button onClick={startConversation} className="start-button">
                 Start Your Journey
               </button>
-            </div>
-            {startupError && <div className="manual-error">{startupError}</div>}
+              {startupError && <div className="manual-error" style={{ marginTop: '12px' }}>{startupError}</div>}
+            </motion.div>
           </div>
         )}
 
@@ -2549,98 +2563,102 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
         onToggle3DBuildings={() => setEnable3DBuildings(prev => !prev)}
       />
 
-      {!DEMO_MODE && (
-        <div className="debug-hint">
-          Press <kbd>Ctrl+Shift+D</kbd> for Debug HUD; <kbd>Ctrl+Shift+M</kbd> to toggle controls
-        </div>
-      )}
+      {
+        !DEMO_MODE && (
+          <div className="debug-hint">
+            Press <kbd>Ctrl+Shift+D</kbd> for Debug HUD; <kbd>Ctrl+Shift+M</kbd> to toggle controls
+          </div>
+        )
+      }
 
-      {!DEMO_MODE && manualControlsVisible && (
-        <motion.div
-          drag
-          dragControls={manualDragControls}
-          dragListener={false}
-          dragMomentum={false}
-          className="manual-controls"
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.95 }}
-        >
-          <div
-            className="manual-header"
-            onPointerDown={(e) => manualDragControls.start(e)}
+      {
+        !DEMO_MODE && manualControlsVisible && (
+          <motion.div
+            drag
+            dragControls={manualDragControls}
+            dragListener={false}
+            dragMomentum={false}
+            className="manual-controls"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
           >
-            <span className="manual-header-title">Manual Controls</span>
-            <span className="manual-header-hint">Drag to move</span>
-          </div>
-          <div className="manual-body">
-            <div className="manual-row">
-              <span className={`manual-status manual-status-${micStatus}`}>
-                Mic: {micStatus}
-              </span>
+            <div
+              className="manual-header"
+              onPointerDown={(e) => manualDragControls.start(e)}
+            >
+              <span className="manual-header-title">Manual Controls</span>
+              <span className="manual-header-hint">Drag to move</span>
             </div>
-            <div className="manual-row">
-              <label className="manual-label" htmlFor="city-select">
-                City
+            <div className="manual-body">
+              <div className="manual-row">
+                <span className={`manual-status manual-status-${micStatus}`}>
+                  Mic: {micStatus}
+                </span>
+              </div>
+              <div className="manual-row">
+                <label className="manual-label" htmlFor="city-select">
+                  City
+                </label>
+                <select
+                  id="city-select"
+                  className="manual-input"
+                  value={selectedCity}
+                  onChange={(event) => switchCity(event.target.value as CityId)}
+                >
+                  {cityOptions.map((city) => (
+                    <option key={city.id} value={city.id}>
+                      {city.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="manual-row">
+                <input
+                  className="manual-input"
+                  value={manualMessage}
+                  onChange={(event) => setManualMessage(event.target.value)}
+                />
+                <button className="manual-button" onClick={sendManualMessage}>
+                  Send Text
+                </button>
+              </div>
+              <div className="manual-row manual-row-stack">
+                <label className="manual-label" htmlFor="debug-zoom">
+                  Debug zoom: {debugZoom.toFixed(1)}
+                </label>
+                <input
+                  id="debug-zoom"
+                  className="manual-range"
+                  type="range"
+                  min="16"
+                  max="20"
+                  step="0.1"
+                  value={debugZoom}
+                  onChange={(event) => setDebugZoom(Number(event.target.value))}
+                />
+              </div>
+              <label className="manual-checkbox">
+                <input
+                  type="checkbox"
+                  checked={applyDebugZoom}
+                  onChange={(event) => setApplyDebugZoom(event.target.checked)}
+                />
+                Override tool zoom
               </label>
-              <select
-                id="city-select"
-                className="manual-input"
-                value={selectedCity}
-                onChange={(event) => switchCity(event.target.value as CityId)}
-              >
-                {cityOptions.map((city) => (
-                  <option key={city.id} value={city.id}>
-                    {city.name}
-                  </option>
-                ))}
-              </select>
+              <div className="manual-row">
+                <button className="manual-button" onClick={runToolTest}>
+                  Test Tool Call
+                </button>
+              </div>
+              {manualError && <div className="manual-error">{manualError}</div>}
+              {livePhotoStatus === 'error' && livePhotoError && (
+                <div className="manual-error">Live photos: {livePhotoError}</div>
+              )}
             </div>
-            <div className="manual-row">
-              <input
-                className="manual-input"
-                value={manualMessage}
-                onChange={(event) => setManualMessage(event.target.value)}
-              />
-              <button className="manual-button" onClick={sendManualMessage}>
-                Send Text
-              </button>
-            </div>
-            <div className="manual-row manual-row-stack">
-              <label className="manual-label" htmlFor="debug-zoom">
-                Debug zoom: {debugZoom.toFixed(1)}
-              </label>
-              <input
-                id="debug-zoom"
-                className="manual-range"
-                type="range"
-                min="16"
-                max="20"
-                step="0.1"
-                value={debugZoom}
-                onChange={(event) => setDebugZoom(Number(event.target.value))}
-              />
-            </div>
-            <label className="manual-checkbox">
-              <input
-                type="checkbox"
-                checked={applyDebugZoom}
-                onChange={(event) => setApplyDebugZoom(event.target.checked)}
-              />
-              Override tool zoom
-            </label>
-            <div className="manual-row">
-              <button className="manual-button" onClick={runToolTest}>
-                Test Tool Call
-              </button>
-            </div>
-            {manualError && <div className="manual-error">{manualError}</div>}
-            {livePhotoStatus === 'error' && livePhotoError && (
-              <div className="manual-error">Live photos: {livePhotoError}</div>
-            )}
-          </div>
-        </motion.div>
-      )}
+          </motion.div>
+        )
+      }
     </div>
   );
 };
