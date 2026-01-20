@@ -166,11 +166,12 @@ export class UIOrchestrator {
     this.map.flyTo({
       center: landmark.coordinates,
       zoom: resolvedZoom,
-      duration: 2000,
+      duration: 2500,
       essential: true,
       pitch: 70,
       bearing: -15,
-      easing: (t) => t * (2 - t)
+      curve: 1.5,
+      easing: (t) => (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t)
     });
 
     this.state.activeAnimations.push({ type: 'flyTo', landmarkId: id });

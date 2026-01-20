@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { createClient, AnamEvent } from '@anam-ai/js-sdk';
 import mapboxgl from 'mapbox-gl';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { UIOrchestrator, UIState } from './UIOrchestrator';
 import { DebugHUD } from './DebugHUD';
@@ -388,6 +388,7 @@ const MicTestView = () => {
 };
 
 const TravelAgentDemo = () => {
+  const manualDragControls = useDragControls();
   const initialCityId = getInitialCityId();
   const [selectedCity, setSelectedCity] = useState<CityId>(initialCityId);
   const cityData = getCityData(selectedCity);
@@ -479,6 +480,7 @@ const TravelAgentDemo = () => {
   const [showInterrupted, setShowInterrupted] = useState(false);
 
   const [debugVisible, setDebugVisible] = useState(false);
+  const [enable3DBuildings, setEnable3DBuildings] = useState(false);
   const [manualControlsVisible, setManualControlsVisible] = useState(false);
   const initialMetrics: DebugMetrics = {
     lastEvent: null,
@@ -792,8 +794,9 @@ const TravelAgentDemo = () => {
       style: 'mapbox://styles/mapbox/satellite-streets-v12',
       center: cityData.city.coordinates,
       zoom: cityData.city.zoom,
-      pitch: 60,
-      bearing: -10
+      pitch: 65,
+      bearing: -20,
+      antialias: true
     });
 
     map.current.addControl(new mapboxgl.NavigationControl());
@@ -816,7 +819,7 @@ const TravelAgentDemo = () => {
             tileSize: 512,
             maxzoom: 14
           });
-          map.current.setTerrain({ source: 'mapbox-dem', exaggeration: 1.2 });
+          map.current.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
         }
 
         if (!map.current.getLayer('sky')) {
@@ -826,26 +829,83 @@ const TravelAgentDemo = () => {
             paint: {
               'sky-type': 'atmosphere',
               'sky-atmosphere-sun': [0.0, 0.0],
-              'sky-atmosphere-sun-intensity': 10
+              'sky-atmosphere-sun-intensity': 12
             }
           });
         }
 
         map.current.setFog({
-          range: [0.8, 8],
-          color: '#eef2ff',
-          'high-color': '#f8fafc',
-          'space-color': '#dbeafe',
-          'horizon-blend': 0.2,
-          'star-intensity': 0.1
+          range: [0.5, 10],
+          color: '#e8f4f8',
+          'high-color': '#ffffff',
+          'space-color': '#c8e0f0',
+          'horizon-blend': 0.15,
+          'star-intensity': 0.05
         });
 
         map.current.setLight({
           anchor: 'viewport',
           color: '#ffffff',
-          intensity: 0.6,
-          position: [1.15, 210, 30]
+          intensity: 0.8,
+          position: [1.5, 180, 40]
         });
+
+        // Add 3D buildings layer (only if enabled)
+        if (enable3DBuildings) {
+          const layers = map.current.getStyle().layers;
+          const labelLayerId = layers?.find(
+            (layer) => layer.type === 'symbol' && layer.layout?.['text-field']
+          )?.id;
+
+          if (!map.current.getLayer('3d-buildings')) {
+            map.current.addLayer(
+              {
+                id: '3d-buildings',
+                source: 'composite',
+                'source-layer': 'building',
+                filter: ['==', 'extrude', 'true'],
+                type: 'fill-extrusion',
+                minzoom: 14,
+                paint: {
+                  'fill-extrusion-color': [
+                    'interpolate',
+                    ['linear'],
+                    ['get', 'height'],
+                    0,
+                    '#f0ead6',
+                    50,
+                    '#d8cdb5',
+                    100,
+                    '#c0b89a',
+                    200,
+                    '#a89878'
+                  ],
+                  'fill-extrusion-height': [
+                    'interpolate',
+                    ['linear'],
+                    ['zoom'],
+                    14,
+                    0,
+                    14.5,
+                    ['get', 'height']
+                  ],
+                  'fill-extrusion-base': [
+                    'interpolate',
+                    ['linear'],
+                    ['zoom'],
+                    14,
+                    0,
+                    14.5,
+                    ['get', 'min_height']
+                  ],
+                  'fill-extrusion-opacity': 0.85,
+                  'fill-extrusion-vertical-gradient': true
+                }
+              },
+              labelLayerId
+            );
+          }
+        }
 
         setMapError(null);
         applyEnglishLabels(map.current);
@@ -866,6 +926,74 @@ const TravelAgentDemo = () => {
       updateDebugMetrics
     );
   }, []);
+
+  useEffect(() => {
+    if (!map.current || !mapReady) {
+      return;
+    }
+
+    if (enable3DBuildings) {
+      // Add 3D buildings layer
+      const layers = map.current.getStyle().layers;
+      const labelLayerId = layers?.find(
+        (layer) => layer.type === 'symbol' && layer.layout?.['text-field']
+      )?.id;
+
+      if (!map.current.getLayer('3d-buildings')) {
+        map.current.addLayer(
+          {
+            id: '3d-buildings',
+            source: 'composite',
+            'source-layer': 'building',
+            filter: ['==', 'extrude', 'true'],
+            type: 'fill-extrusion',
+            minzoom: 14,
+            paint: {
+              'fill-extrusion-color': [
+                'interpolate',
+                ['linear'],
+                ['get', 'height'],
+                0,
+                '#f0ead6',
+                50,
+                '#d8cdb5',
+                100,
+                '#c0b89a',
+                200,
+                '#a89878'
+              ],
+              'fill-extrusion-height': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                14,
+                0,
+                14.5,
+                ['get', 'height']
+              ],
+              'fill-extrusion-base': [
+                'interpolate',
+                ['linear'],
+                ['zoom'],
+                14,
+                0,
+                14.5,
+                ['get', 'min_height']
+              ],
+              'fill-extrusion-opacity': 0.85,
+              'fill-extrusion-vertical-gradient': true
+            }
+          },
+          labelLayerId
+        );
+      }
+    } else {
+      // Remove 3D buildings layer
+      if (map.current.getLayer('3d-buildings')) {
+        map.current.removeLayer('3d-buildings');
+      }
+    }
+  }, [enable3DBuildings, mapReady]);
 
   useEffect(() => {
     orchestratorRef.current?.setReady(mapReady && anamReady);
@@ -2417,6 +2545,8 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
           activeAnimations: orchestratorRef.current?.state.activeAnimations.length || 0
         }}
         visible={!DEMO_MODE && debugVisible}
+        enable3DBuildings={enable3DBuildings}
+        onToggle3DBuildings={() => setEnable3DBuildings(prev => !prev)}
       />
 
       {!DEMO_MODE && (
@@ -2426,72 +2556,90 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
       )}
 
       {!DEMO_MODE && manualControlsVisible && (
-        <div className="manual-controls">
-          <div className="manual-row">
-            <span className={`manual-status manual-status-${micStatus}`}>
-              Mic: {micStatus}
-            </span>
+        <motion.div
+          drag
+          dragControls={manualDragControls}
+          dragListener={false}
+          dragMomentum={false}
+          className="manual-controls"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
+        >
+          <div
+            className="manual-header"
+            onPointerDown={(e) => manualDragControls.start(e)}
+          >
+            <span className="manual-header-title">Manual Controls</span>
+            <span className="manual-header-hint">Drag to move</span>
           </div>
-          <div className="manual-row">
-            <label className="manual-label" htmlFor="city-select">
-              City
+          <div className="manual-body">
+            <div className="manual-row">
+              <span className={`manual-status manual-status-${micStatus}`}>
+                Mic: {micStatus}
+              </span>
+            </div>
+            <div className="manual-row">
+              <label className="manual-label" htmlFor="city-select">
+                City
+              </label>
+              <select
+                id="city-select"
+                className="manual-input"
+                value={selectedCity}
+                onChange={(event) => switchCity(event.target.value as CityId)}
+              >
+                {cityOptions.map((city) => (
+                  <option key={city.id} value={city.id}>
+                    {city.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="manual-row">
+              <input
+                className="manual-input"
+                value={manualMessage}
+                onChange={(event) => setManualMessage(event.target.value)}
+              />
+              <button className="manual-button" onClick={sendManualMessage}>
+                Send Text
+              </button>
+            </div>
+            <div className="manual-row manual-row-stack">
+              <label className="manual-label" htmlFor="debug-zoom">
+                Debug zoom: {debugZoom.toFixed(1)}
+              </label>
+              <input
+                id="debug-zoom"
+                className="manual-range"
+                type="range"
+                min="16"
+                max="20"
+                step="0.1"
+                value={debugZoom}
+                onChange={(event) => setDebugZoom(Number(event.target.value))}
+              />
+            </div>
+            <label className="manual-checkbox">
+              <input
+                type="checkbox"
+                checked={applyDebugZoom}
+                onChange={(event) => setApplyDebugZoom(event.target.checked)}
+              />
+              Override tool zoom
             </label>
-            <select
-              id="city-select"
-              className="manual-input"
-              value={selectedCity}
-              onChange={(event) => switchCity(event.target.value as CityId)}
-            >
-              {cityOptions.map((city) => (
-                <option key={city.id} value={city.id}>
-                  {city.name}
-                </option>
-              ))}
-            </select>
+            <div className="manual-row">
+              <button className="manual-button" onClick={runToolTest}>
+                Test Tool Call
+              </button>
+            </div>
+            {manualError && <div className="manual-error">{manualError}</div>}
+            {livePhotoStatus === 'error' && livePhotoError && (
+              <div className="manual-error">Live photos: {livePhotoError}</div>
+            )}
           </div>
-          <div className="manual-row">
-            <input
-              className="manual-input"
-              value={manualMessage}
-              onChange={(event) => setManualMessage(event.target.value)}
-            />
-            <button className="manual-button" onClick={sendManualMessage}>
-              Send Text
-            </button>
-          </div>
-          <div className="manual-row manual-row-stack">
-            <label className="manual-label" htmlFor="debug-zoom">
-              Debug zoom: {debugZoom.toFixed(1)}
-            </label>
-            <input
-              id="debug-zoom"
-              className="manual-range"
-              type="range"
-              min="16"
-              max="20"
-              step="0.1"
-              value={debugZoom}
-              onChange={(event) => setDebugZoom(Number(event.target.value))}
-            />
-          </div>
-          <label className="manual-checkbox">
-            <input
-              type="checkbox"
-              checked={applyDebugZoom}
-              onChange={(event) => setApplyDebugZoom(event.target.checked)}
-            />
-            Override tool zoom
-          </label>
-          <div className="manual-row">
-            <button className="manual-button" onClick={runToolTest}>
-              Test Tool Call
-            </button>
-          </div>
-          {manualError && <div className="manual-error">{manualError}</div>}
-          {livePhotoStatus === 'error' && livePhotoError && (
-            <div className="manual-error">Live photos: {livePhotoError}</div>
-          )}
-        </div>
+        </motion.div>
       )}
     </div>
   );

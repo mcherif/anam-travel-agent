@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useDragControls } from 'framer-motion';
 import './DebugHUD.css';
 
 interface DebugMetrics {
@@ -29,9 +29,14 @@ interface DebugMetrics {
 interface DebugHUDProps {
   metrics: DebugMetrics;
   visible: boolean;
+  enable3DBuildings?: boolean;
+  onToggle3DBuildings?: () => void;
 }
 
-export const DebugHUD: React.FC<DebugHUDProps> = ({ metrics, visible }) => {
+export const DebugHUD: React.FC<DebugHUDProps> = ({ metrics, visible, enable3DBuildings, onToggle3DBuildings }) => {
+  const dragControls = useDragControls();
+  const hudRef = React.useRef<HTMLDivElement>(null);
+
   if (!visible) return null;
 
   const formatTimestamp = (timestamp: number) => {
@@ -39,8 +44,7 @@ export const DebugHUD: React.FC<DebugHUDProps> = ({ metrics, visible }) => {
       hour12: false,
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit',
-      fractionalSecondDigits: 3
+      second: '2-digit'
     });
   };
 
@@ -69,12 +73,21 @@ export const DebugHUD: React.FC<DebugHUDProps> = ({ metrics, visible }) => {
 
   return (
     <motion.div
+      ref={hudRef}
+      drag
+      dragControls={dragControls}
+      dragListener={false}
+      dragMomentum={false}
       className="debug-hud"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
     >
-      <div className="debug-header">
+      <div
+        className="debug-header"
+        onPointerDown={(e) => dragControls.start(e)}
+        style={{ cursor: 'grab' }}
+      >
         <h2>Debug HUD</h2>
         <div className="debug-hint">Press Ctrl+Shift+D to toggle</div>
       </div>
@@ -82,7 +95,7 @@ export const DebugHUD: React.FC<DebugHUDProps> = ({ metrics, visible }) => {
       {/* Persona State */}
       <div className="debug-section">
         <h3>Persona State</h3>
-        <div 
+        <div
           className="state-indicator"
           style={{ backgroundColor: getStateColor(metrics.personaState) }}
         >
@@ -94,7 +107,7 @@ export const DebugHUD: React.FC<DebugHUDProps> = ({ metrics, visible }) => {
       <div className="debug-section">
         <h3>UI State</h3>
         <div className="state-info">
-          <div 
+          <div
             className="state-badge"
             style={{ backgroundColor: getStateColor(metrics.uiState) }}
           >
@@ -104,6 +117,19 @@ export const DebugHUD: React.FC<DebugHUDProps> = ({ metrics, visible }) => {
             Active Animations: <strong>{metrics.activeAnimations}</strong>
           </div>
         </div>
+      </div>
+
+      {/* Map Settings */}
+      <div className="debug-section">
+        <h3>Map Settings</h3>
+        <label className="debug-checkbox">
+          <input
+            type="checkbox"
+            checked={enable3DBuildings || false}
+            onChange={onToggle3DBuildings}
+          />
+          <span>Enable 3D Buildings</span>
+        </label>
       </div>
 
       {/* Last Event */}
@@ -210,9 +236,9 @@ export const DebugHUD: React.FC<DebugHUDProps> = ({ metrics, visible }) => {
           {metrics.latencies.highlightDelay !== undefined && (
             <div className="perf-indicator">
               <div className="perf-label">Tool to UI</div>
-              <div 
+              <div
                 className="perf-bar"
-                style={{ 
+                style={{
                   width: `${Math.min(metrics.latencies.highlightDelay / 5, 100)}%`,
                   backgroundColor: getLatencyColor(metrics.latencies.highlightDelay)
                 }}
