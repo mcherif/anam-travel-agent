@@ -68,6 +68,7 @@ describe('UIOrchestrator', () => {
     const orchestrator = new UIOrchestrator(
       map as any,
       landmarks,
+      'Tunis',
       setCurrentLandmark,
       setUIState,
       showMediaOverlay,
@@ -94,6 +95,7 @@ describe('UIOrchestrator', () => {
     const orchestrator = new UIOrchestrator(
       map as any,
       landmarks,
+      'Tunis',
       setCurrentLandmark,
       setUIState,
       showMediaOverlay,

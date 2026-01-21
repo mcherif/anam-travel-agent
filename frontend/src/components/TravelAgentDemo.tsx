@@ -49,6 +49,19 @@ type LayoutMode = 'intro' | 'tour' | 'wrapup';
 
 type LandmarkMap = Record<string, Landmark>;
 
+type ItineraryStop = {
+  time?: string;
+  label: string;
+  id?: string;
+  note?: string;
+};
+
+type ItineraryPlan = {
+  title: string;
+  intro?: string;
+  items: ItineraryStop[];
+};
+
 type DebugMetrics = {
   lastEvent: { type: string; timestamp: number; data: unknown } | null;
   toolCallQueue: ToolCallEntry[];
@@ -72,6 +85,8 @@ const MAPILLARY_FIELDS = 'id,thumb_1024_url,captured_at';
 const MAPILLARY_IS_PANO = 'false';
 const MAPILLARY_LIMIT = 5;
 const MAPILLARY_RADIUS_METERS = 300;
+const TOUR_KICKOFF_DELAY_MS = 700;
+const OPTIMISTIC_TOOL_TTL_MS = 4000;
 const DEMO_MODE = import.meta.env.VITE_DEMO_MODE !== 'false';
 const MIC_TEST_MODE = import.meta.env.VITE_MIC_TEST === 'true';
 const TOOL_FALLBACK_MODE = import.meta.env.VITE_TOOL_FALLBACK === 'true';
@@ -149,6 +164,12 @@ const getInitialCityId = (): CityId => {
   return DEFAULT_CITY;
 };
 
+const buildOpeningLine = (cityName: string) =>
+  `Hi! I'm your travel agent, and I can propose visits to Tunis or Istanbul. Shall we start with ${cityName}?`;
+
+const buildStarterPrompt = (cityName: string) =>
+  `Please reply with this exact opening line: "${buildOpeningLine(cityName)}" and then wait for my choice before starting the tour.`;
+
 const resolveLandmarkId = (value: unknown, landmarks: LandmarkMap) => {
   if (typeof value !== 'string') {
     return undefined;
@@ -218,6 +239,123 @@ const normalizeLayoutMode = (value: unknown): LayoutMode | undefined => {
     default:
       return undefined;
   }
+};
+
+const normalizeItineraryItems = (rawItems: unknown, landmarks: LandmarkMap): ItineraryStop[] => {
+  if (!Array.isArray(rawItems)) {
+    return [];
+  }
+
+  return rawItems
+    .map((item) => {
+      if (typeof item === 'string') {
+        const trimmed = item.trim();
+        const resolvedId = resolveLandmarkId(trimmed, landmarks);
+        const fallbackLabel = resolvedId ? landmarks[resolvedId]?.name : undefined;
+        return {
+          label: trimmed || fallbackLabel || 'Stop',
+          id: resolvedId
+        };
+      }
+
+      if (!item || typeof item !== 'object') {
+        return null;
+      }
+
+      const entry = item as Record<string, unknown>;
+      const rawLabel =
+        typeof entry.label === 'string'
+          ? entry.label
+          : typeof entry.title === 'string'
+            ? entry.title
+            : typeof entry.name === 'string'
+              ? entry.name
+              : typeof entry.place === 'string'
+                ? entry.place
+                : '';
+      const rawId =
+        typeof entry.id === 'string'
+          ? entry.id
+          : typeof entry.landmarkId === 'string'
+            ? entry.landmarkId
+            : typeof entry.landmark === 'string'
+              ? entry.landmark
+              : undefined;
+      const rawTime =
+        typeof entry.time === 'string'
+          ? entry.time
+          : typeof entry.slot === 'string'
+            ? entry.slot
+            : typeof entry.when === 'string'
+              ? entry.when
+              : undefined;
+      const rawNote =
+        typeof entry.note === 'string'
+          ? entry.note
+          : typeof entry.description === 'string'
+            ? entry.description
+            : undefined;
+
+      const resolvedId = resolveLandmarkId(rawId ?? rawLabel, landmarks);
+      const fallbackLabel = resolvedId ? landmarks[resolvedId]?.name : undefined;
+      const label = rawLabel.trim() || fallbackLabel || 'Stop';
+
+      return {
+        label,
+        id: resolvedId,
+        time: rawTime?.trim() || undefined,
+        note: rawNote?.trim() || undefined
+      };
+    })
+    .filter((item): item is ItineraryStop => Boolean(item && item.label));
+};
+
+const buildItineraryPlan = (
+  args: Record<string, unknown>,
+  cityName: string,
+  landmarks: LandmarkMap,
+  fallbackLandmarks: Landmark[]
+): ItineraryPlan => {
+  const titleValue =
+    typeof args.title === 'string'
+      ? args.title
+      : typeof args.name === 'string'
+        ? args.name
+        : '';
+  const introValue =
+    typeof args.intro === 'string'
+      ? args.intro
+      : typeof args.summary === 'string'
+        ? args.summary
+        : '';
+  const rawItems = Array.isArray(args.items)
+    ? args.items
+    : Array.isArray(args.stops)
+      ? args.stops
+      : Array.isArray(args.schedule)
+        ? args.schedule
+        : Array.isArray(args.itinerary)
+          ? args.itinerary
+          : [];
+  let items = normalizeItineraryItems(rawItems, landmarks);
+
+  if (items.length === 0 && fallbackLandmarks.length > 0) {
+    const defaultTimes = ['Morning', 'Midday', 'Afternoon', 'Evening'];
+    items = fallbackLandmarks.slice(0, 4).map((landmark, index) => ({
+      time: defaultTimes[index] ?? `Stop ${index + 1}`,
+      label: landmark.name,
+      id: landmark.id
+    }));
+  }
+
+  const title = titleValue.trim() || `Day in ${cityName}`;
+  const intro = introValue.trim() || undefined;
+
+  return {
+    title,
+    intro,
+    items
+  };
 };
 
 const findCityInText = (text: string, lookup: Array<{ id: CityId; name: string }>) => {
@@ -433,7 +571,7 @@ const TravelAgentDemo = () => {
   const [anamReady, setAnamReady] = useState(false);
   const [micStatus, setMicStatus] = useState<'unknown' | 'pending' | 'granted' | 'denied' | 'active'>('unknown');
   const [manualMessage, setManualMessage] = useState(
-    `Tell me about ${getCityData(initialCityId).city.name}`
+    buildStarterPrompt(getCityData(initialCityId).city.name)
   );
   const [videoDevices, setVideoDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedVideoDeviceId, setSelectedVideoDeviceId] = useState('default');
@@ -467,11 +605,18 @@ const TravelAgentDemo = () => {
     open: boolean;
     landmarkId: string | null;
   }>({ open: false, landmarkId: null });
+  const [dayItineraryEnabled, setDayItineraryEnabled] = useState(false);
   const debugZoomRef = useRef(debugZoom);
   const applyDebugZoomRef = useRef(applyDebugZoom);
+  const dayItineraryEnabledRef = useRef(dayItineraryEnabled);
+  const manualMessageRef = useRef(manualMessage);
+  const awaitingCityChoiceRef = useRef(false);
+  const autoPromptedRef = useRef(false);
   const toolCallsSeenRef = useRef(false);
   const fallbackScheduledRef = useRef(false);
   const recentToolCallsRef = useRef<Array<{ key: string; timestamp: number }>>([]);
+  const optimisticToolCallsRef = useRef<Array<{ key: string; timestamp: number }>>([]);
+  const tourKickoffTimeoutRef = useRef<number | null>(null);
 
   const orchestratorRef = useRef<UIOrchestrator | null>(null);
   const landmarksRef = useRef<LandmarkMap>(landmarksById);
@@ -500,6 +645,8 @@ const TravelAgentDemo = () => {
   const userVideoStreamRef = useRef<MediaStream | null>(null);
 
   const [currentLandmark, setCurrentLandmark] = useState<Landmark | null>(null);
+  const [itineraryPlan, setItineraryPlan] = useState<ItineraryPlan | null>(null);
+  const [itineraryOpen, setItineraryOpen] = useState(false);
   const localImages = useMemo<ImageItem[]>(() => {
     if (!currentLandmark) {
       return [];
@@ -556,6 +703,82 @@ const TravelAgentDemo = () => {
     });
   };
 
+  const clearTourKickoff = () => {
+    if (tourKickoffTimeoutRef.current === null) {
+      return;
+    }
+    window.clearTimeout(tourKickoffTimeoutRef.current);
+    tourKickoffTimeoutRef.current = null;
+  };
+
+  const scheduleTourKickoff = (requestedCity?: CityId) => {
+    if (!awaitingCityChoiceRef.current || tourKickoffTimeoutRef.current !== null) {
+      return;
+    }
+
+    tourKickoffTimeoutRef.current = window.setTimeout(() => {
+      tourKickoffTimeoutRef.current = null;
+
+      if (!awaitingCityChoiceRef.current || toolCallsSeenRef.current) {
+        return;
+      }
+
+      if (!orchestratorRef.current || !mapReady) {
+        return;
+      }
+
+      const cityId = requestedCity ?? selectedCityRef.current;
+      const city = getCityData(cityId);
+      const firstLandmark = city.landmarks[0];
+      if (!firstLandmark) {
+        return;
+      }
+
+      const flyArgs = { id: firstLandmark.id, zoom: firstLandmark.zoom };
+      const panelArgs = { id: firstLandmark.id };
+      const now = Date.now();
+
+      optimisticToolCallsRef.current.push({
+        key: `fly_to_landmark:${JSON.stringify(flyArgs)}`,
+        timestamp: now
+      });
+      optimisticToolCallsRef.current.push({
+        key: `show_landmark_panel:${JSON.stringify(panelArgs)}`,
+        timestamp: now
+      });
+
+      orchestratorRef.current.handleToolCall('fly_to_landmark', flyArgs);
+      orchestratorRef.current.handleToolCall('show_landmark_panel', panelArgs);
+      awaitingCityChoiceRef.current = false;
+    }, TOUR_KICKOFF_DELAY_MS);
+  };
+
+  const showItinerary = (plan: ItineraryPlan) => {
+    setItineraryPlan(plan);
+    setItineraryOpen(true);
+  };
+
+  const closeItinerary = () => {
+    setItineraryOpen(false);
+  };
+
+  const handleItineraryStop = async (stop: ItineraryStop) => {
+    if (!stop.id || !orchestratorRef.current) {
+      return;
+    }
+
+    const landmark = cityConfig.allLandmarksById[stop.id];
+    if (!landmark) {
+      return;
+    }
+
+    await orchestratorRef.current.handleToolCall('fly_to_landmark', {
+      id: landmark.id,
+      zoom: landmark.zoom
+    });
+    await orchestratorRef.current.handleToolCall('show_landmark_panel', { id: landmark.id });
+  };
+
   const openMediaOverlay = (id: string, kind: MediaKind) => {
     const landmark = cityConfig.allLandmarksById[id];
     if (!landmark) {
@@ -600,6 +823,18 @@ const TravelAgentDemo = () => {
   }, [applyDebugZoom]);
 
   useEffect(() => {
+    manualMessageRef.current = manualMessage;
+  }, [manualMessage]);
+
+  useEffect(() => {
+    dayItineraryEnabledRef.current = dayItineraryEnabled;
+    if (!dayItineraryEnabled) {
+      setItineraryPlan(null);
+      setItineraryOpen(false);
+    }
+  }, [dayItineraryEnabled]);
+
+  useEffect(() => {
     landmarksRef.current = landmarksById;
     orchestratorRef.current?.setLandmarks(landmarksById);
   }, [landmarksById]);
@@ -609,9 +844,18 @@ const TravelAgentDemo = () => {
   }, [selectedCity]);
 
   useEffect(() => {
-    const nextMessage = `Tell me about ${cityData.city.name}`;
+    setItineraryPlan(null);
+    setItineraryOpen(false);
+  }, [selectedCity]);
+
+  useEffect(() => {
+    const nextMessage = buildStarterPrompt(cityData.city.name);
     setManualMessage((prev) => {
-      if (!prev || prev.toLowerCase().startsWith('tell me about')) {
+      const normalized = prev.toLowerCase();
+      if (!prev ||
+        normalized.startsWith('tell me about') ||
+        normalized.startsWith('please introduce yourself')
+      ) {
         return nextMessage;
       }
       return prev;
@@ -622,7 +866,27 @@ const TravelAgentDemo = () => {
     toolCallsSeenRef.current = false;
     fallbackScheduledRef.current = false;
     recentToolCallsRef.current = [];
+    optimisticToolCallsRef.current = [];
+    clearTourKickoff();
   }, [selectedCity]);
+
+  useEffect(() => {
+    if (!anamClient || !isConnected || autoPromptedRef.current) {
+      return;
+    }
+
+    const message = manualMessageRef.current.trim();
+    if (!message) {
+      return;
+    }
+
+    autoPromptedRef.current = true;
+    awaitingCityChoiceRef.current = true;
+    clearTourKickoff();
+    anamClient.sendUserMessage(message).catch((error) => {
+      console.warn('Failed to auto-send starter prompt:', error);
+    });
+  }, [anamClient, isConnected]);
 
   const refreshVideoDevices = async () => {
     if (!navigator.mediaDevices?.enumerateDevices) {
@@ -1377,8 +1641,8 @@ const TravelAgentDemo = () => {
         const citySummaries = CITY_IDS.map((id) => {
           const data = getCityData(id);
           const starter = data.landmarks[0];
-          return `- ${data.city.name}: start with ${starter?.name ?? 'the city center'} (id: ${starter?.id ?? 'center'})`;
-        }).join('\n');
+          return `${data.city.name} starts with ${starter?.name ?? 'the city center'} (id: ${starter?.id ?? 'center'})`;
+        }).join(' | ');
 
         const tools = [
           {
@@ -1484,6 +1748,64 @@ const TravelAgentDemo = () => {
           }
         ];
 
+        if (dayItineraryEnabled) {
+          tools.push({
+            type: 'client',
+            name: 'show_itinerary',
+            description: 'Display a one-day itinerary panel for the active city.',
+            parameters: {
+              type: 'object',
+              properties: {
+                title: {
+                  type: 'string',
+                  description: 'Title for the day plan'
+                },
+                intro: {
+                  type: 'string',
+                  description: 'Short intro sentence for the plan'
+                },
+                items: {
+                  type: 'array',
+                  description: 'Ordered list of day stops',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      time: {
+                        type: 'string',
+                        description: 'Time of day (Morning, Afternoon, Evening)'
+                      },
+                      label: {
+                        type: 'string',
+                        description: 'Stop name'
+                      },
+                      id: {
+                        type: 'string',
+                        description: 'Optional landmark identifier',
+                        enum: cityConfig.allLandmarkIds
+                      },
+                      note: {
+                        type: 'string',
+                        description: 'Optional note or activity suggestion'
+                      }
+                    },
+                    required: ['label']
+                  }
+                }
+              },
+              required: ['title', 'items']
+            }
+          });
+        }
+
+        const openingLine = buildOpeningLine(cityName);
+        const itineraryPrompt = dayItineraryEnabled
+          ? `
+## Day Visit Itinerary
+If the user asks for a day visit or itinerary, call show_itinerary with 3-5 stops and time-of-day labels.
+After show_itinerary, fly to the first stop and show its panel.
+`
+          : '';
+
         const systemPrompt = `You are Sofia, an enthusiastic travel agent for these cities: ${CITY_IDS.map(
           (id) => getCityData(id).city.name
         ).join(', ')}.
@@ -1514,7 +1836,16 @@ You have these tools to control the map visualization:
 4. **show_media({ id, kind })** - Open a media overlay for extra wow factor
    - kind: "photo" for the carousel, "video" for a short clip
    - Call after show_landmark_panel when you want to highlight visuals
-
+${dayItineraryEnabled ? `
+5. **show_itinerary({ title, intro, items })** - Present a one-day plan
+   - items: [{ time: "Morning", label: "Medina", id: "medina", note: "Wander the souks." }, ...]
+   - Use when the user asks for a day visit or itinerary
+` : ''}
+## Opening Line
+Begin the first response with: "${openingLine}"
+Then wait for the user's city choice before starting the tour.
+If the user confirms without naming a city, assume ${cityName}.
+The opening sentence is the only part exempt from the tool-call requirement.
 ## Conversation Flow
 At the start of a city intro, call set_layout({ mode: "intro" }). While touring landmarks, call
 set_layout({ mode: "tour" }). When you wrap up, call set_layout({ mode: "wrapup" }).
@@ -1527,22 +1858,10 @@ For each landmark you discuss:
 5. Before moving to next landmark, call dim_previous_landmarks()
 
 Optional: Call show_media({ id: "landmark-id", kind: "photo" }) for a full-screen carousel.
-
+After the user chooses a city, cover exactly one landmark and then ask if they want another landmark or a deeper dive.
+${itineraryPrompt}
 ## City Starters
-${citySummaries}
-
-## Speaking Style
-- Warm and enthusiastic but not overwhelming
-- Keep responses to 2-4 sentences per landmark
-- Natural pauses for visual absorption
-- Ask if they want to explore deeper or see another location
-
-## Example Interaction
-User: "Tell me about ${cityName}"
-You: [CALL fly_to_landmark({ id: "${primaryLandmarkId}", zoom: 16 })]
-You: "I'd love to! Let me start with ${primaryLandmarkName}. It is one of the best places to begin a tour of ${cityName}."
-You: [CALL show_landmark_panel({ id: "${primaryLandmarkId}" })]
-You: "Would you like to explore another landmark, or go deeper here?"`;
+${citySummaries}`;
 
         const personaConfig = {
           name: 'Sofia',
@@ -1590,7 +1909,7 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
     };
 
     initAnam();
-  }, [anamClient, landmarkIds, selectedCity]);
+  }, [anamClient, dayItineraryEnabled, landmarkIds, selectedCity]);
 
   useEffect(() => () => stopUserVideo(), []);
 
@@ -1673,12 +1992,74 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
       }
 
       toolCallsSeenRef.current = true;
+      if (toolName === 'fly_to_landmark' || toolName === 'show_landmark_panel') {
+        awaitingCityChoiceRef.current = false;
+        clearTourKickoff();
+      }
       let normalizedArgs = normalizeToolArgs(toolArgs, landmarksRef.current);
       if (!DEMO_MODE && applyDebugZoomRef.current) {
         normalizedArgs = {
           ...normalizedArgs,
           zoom: clampZoom(debugZoomRef.current, 16, 20)
         };
+      }
+
+      if (toolName === 'show_itinerary') {
+        const existingQueue = debugMetricsRef.current.toolCallQueue;
+        if (!dayItineraryEnabledRef.current) {
+          updateDebugMetrics({
+            lastEvent: {
+              type: 'TOOL_CALL_IGNORED',
+              timestamp: toolCallStart,
+              data: { toolName, reason: 'dayItineraryDisabled' }
+            },
+            toolCallQueue: [
+              ...existingQueue,
+              {
+                name: toolName,
+                args: normalizedArgs,
+                timestamp: toolCallStart,
+                status: 'complete'
+              }
+            ]
+          });
+          return;
+        }
+
+        const activeCity = getCityData(selectedCityRef.current);
+        const itineraryPlan = buildItineraryPlan(
+          normalizedArgs,
+          activeCity.city.name,
+          landmarksRef.current,
+          activeCity.landmarks
+        );
+        const targetStop = itineraryPlan.items.find((item) => item.id);
+        if (targetStop?.id) {
+          const targetCity = cityConfig.landmarkCityMap[targetStop.id];
+          if (targetCity && targetCity !== selectedCityRef.current) {
+            switchCity(targetCity, { skipFly: true });
+          }
+        }
+
+        showItinerary(itineraryPlan);
+
+        updateDebugMetrics({
+          lastEvent: {
+            type: 'TOOL_CALL',
+            timestamp: toolCallStart,
+            data: { toolName, args: itineraryPlan }
+          },
+          toolCallQueue: [
+            ...existingQueue,
+            {
+              name: toolName,
+              args: itineraryPlan,
+              timestamp: toolCallStart,
+              status: 'complete'
+            }
+          ]
+        });
+        return;
       }
 
       if (toolName === 'set_layout') {
@@ -1747,6 +2128,12 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
 
       const key = `${toolName}:${JSON.stringify(normalizedArgs)}`;
       const now = Date.now();
+      optimisticToolCallsRef.current = optimisticToolCallsRef.current.filter(
+        (entry) => now - entry.timestamp < OPTIMISTIC_TOOL_TTL_MS
+      );
+      if (optimisticToolCallsRef.current.some((entry) => entry.key === key)) {
+        return;
+      }
       recentToolCallsRef.current = recentToolCallsRef.current.filter((entry) => now - entry.timestamp < 500);
       if (recentToolCallsRef.current.some((entry) => entry.key === key)) {
         return;
@@ -1828,6 +2215,13 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
         if (requestedCity) {
           switchCity(requestedCity);
         }
+        const normalizedText = text.trim().toLowerCase();
+        const isAffirmative =
+          normalizedText.length > 0 &&
+          /(yes|yeah|yep|sure|ok|okay|start|begin|let's|lets|go ahead)/i.test(normalizedText);
+        if (awaitingCityChoiceRef.current && (requestedCity || isAffirmative)) {
+          scheduleTourKickoff(requestedCity);
+        }
 
         if (debugMetricsRef.current.personaState === 'speaking') {
           orchestratorRef.current?.handleInterrupt();
@@ -1896,18 +2290,42 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
     }
 
     try {
+      setStartupError(null);
       setMicStatus('pending');
       let userAudioStream: MediaStream | undefined;
       try {
         userAudioStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       } catch (error) {
-        console.warn('Microphone access failed, continuing without input audio.', error);
+        console.warn('Microphone access failed.', error);
         setMicStatus('denied');
+        setStartupError('Microphone access denied. Enable mic permission and try again.');
+        return;
+      }
+
+      const audioTracks = userAudioStream?.getAudioTracks() ?? [];
+      if (audioTracks.length === 0) {
+        setMicStatus('denied');
+        setStartupError('No microphone input detected. Check your device settings and try again.');
+        return;
       }
 
       await startUserVideo();
 
       await anamClient.streamToVideoElement('anam-video', userAudioStream);
+
+      if (!autoPromptedRef.current) {
+        const message = manualMessageRef.current.trim();
+        if (message) {
+          try {
+            await anamClient.sendUserMessage(message);
+            autoPromptedRef.current = true;
+            awaitingCityChoiceRef.current = true;
+            clearTourKickoff();
+          } catch (error) {
+            console.warn('Failed to auto-send starter prompt:', error);
+          }
+        }
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setStartupError(message);
@@ -2220,6 +2638,63 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
 
       <div className="map-container">
         <div ref={mapContainer} className="map" />
+
+        <AnimatePresence>
+          {dayItineraryEnabled && itineraryOpen && itineraryPlan && (
+            <motion.div
+              className="itinerary-panel"
+              initial={{ x: -300, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -300, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 280, damping: 26 }}
+            >
+              <div className="itinerary-header">
+                <div>
+                  <span className="itinerary-eyebrow">Day Visit</span>
+                  <h2 className="itinerary-title">{itineraryPlan.title}</h2>
+                  {itineraryPlan.intro && (
+                    <p className="itinerary-intro">{itineraryPlan.intro}</p>
+                  )}
+                </div>
+                <button
+                  className="itinerary-close"
+                  type="button"
+                  onClick={closeItinerary}
+                  aria-label="Close itinerary"
+                >
+                  x
+                </button>
+              </div>
+              {itineraryPlan.items.length === 0 ? (
+                <div className="itinerary-empty">Ask Sofia for a day plan to see stops here.</div>
+              ) : (
+                <ol className="itinerary-list">
+                  {itineraryPlan.items.map((item, index) => (
+                    <li key={`${item.label}-${index}`} className="itinerary-item">
+                      <div className="itinerary-time">{item.time || `Stop ${index + 1}`}</div>
+                      <div className="itinerary-stop">
+                        <div className="itinerary-label">{item.label}</div>
+                        {item.note && <div className="itinerary-note">{item.note}</div>}
+                      </div>
+                      {item.id && (
+                        <button
+                          className="itinerary-action"
+                          type="button"
+                          onClick={() => handleItineraryStop(item)}
+                        >
+                          View
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ol>
+              )}
+              {itineraryPlan.items.length > 0 && (
+                <div className="itinerary-footer">Tap View to preview a stop on the map.</div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         <AnimatePresence>
           {currentLandmark && (
@@ -2561,6 +3036,8 @@ You: "Would you like to explore another landmark, or go deeper here?"`;
         visible={!DEMO_MODE && debugVisible}
         enable3DBuildings={enable3DBuildings}
         onToggle3DBuildings={() => setEnable3DBuildings(prev => !prev)}
+        dayItineraryEnabled={dayItineraryEnabled}
+        onToggleDayItinerary={() => setDayItineraryEnabled((prev) => !prev)}
       />
 
       {

@@ -50,6 +50,7 @@ export class UIOrchestrator {
   ) {
     this.map = map;
     this.landmarks = landmarks;
+    this.cityLabel = cityLabel;
     this.setCurrentLandmark = setCurrentLandmark;
     this.setUIState = setUIState;
     this.showMediaOverlay = showMediaOverlay;

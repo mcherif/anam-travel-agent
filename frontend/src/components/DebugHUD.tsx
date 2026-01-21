@@ -31,9 +31,18 @@ interface DebugHUDProps {
   visible: boolean;
   enable3DBuildings?: boolean;
   onToggle3DBuildings?: () => void;
+  dayItineraryEnabled?: boolean;
+  onToggleDayItinerary?: () => void;
 }
 
-export const DebugHUD: React.FC<DebugHUDProps> = ({ metrics, visible, enable3DBuildings, onToggle3DBuildings }) => {
+export const DebugHUD: React.FC<DebugHUDProps> = ({
+  metrics,
+  visible,
+  enable3DBuildings,
+  onToggle3DBuildings,
+  dayItineraryEnabled,
+  onToggleDayItinerary
+}) => {
   const dragControls = useDragControls();
   const hudRef = React.useRef<HTMLDivElement>(null);
 
@@ -129,6 +138,14 @@ export const DebugHUD: React.FC<DebugHUDProps> = ({ metrics, visible, enable3DBu
             onChange={onToggle3DBuildings}
           />
           <span>Enable 3D Buildings</span>
+        </label>
+        <label className="debug-checkbox">
+          <input
+            type="checkbox"
+            checked={dayItineraryEnabled || false}
+            onChange={onToggleDayItinerary}
+          />
+          <span>Enable Day Itinerary Panel</span>
         </label>
       </div>
 
@@ -251,4 +268,3 @@ export const DebugHUD: React.FC<DebugHUDProps> = ({ metrics, visible, enable3DBu
     </motion.div>
   );
 };
-
