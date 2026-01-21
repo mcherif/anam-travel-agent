@@ -139,6 +139,7 @@ app.get('/api/photos', async (req, res) => {
     const perPageRaw = Number(req.query.perPage || req.query.per_page || 8);
     const perPage = Number.isFinite(perPageRaw) ? Math.min(Math.max(perPageRaw, 1), 12) : 8;
     const providerParam = typeof req.query.provider === 'string' ? req.query.provider.toLowerCase() : '';
+    const sourceParam = typeof req.query.source === 'string' ? req.query.source.trim() : '';
     const excludeParam = typeof req.query.exclude === 'string' ? req.query.exclude : '';
     const excludePeople = isTruthyParam(req.query.excludePeople);
     const excludeTerms = [
@@ -150,7 +151,7 @@ app.get('/api/photos', async (req, res) => {
     const excludeMatchers = buildTermMatchers(excludeTerms);
     const provider = providerParam || PHOTO_PROVIDER;
     const excludeKey = excludeTerms.slice().sort().join('|');
-    const cacheKey = `${provider}|${query.toLowerCase()}|${perPage}|exclude:${excludeKey}`;
+    const cacheKey = `${provider}|${query.toLowerCase()}|${perPage}|source:${sourceParam}|exclude:${excludeKey}`;
     const cached = photoCache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < PHOTO_CACHE_TTL_MS) {
       res.json(cached.payload);
@@ -163,6 +164,9 @@ app.get('/api/photos', async (req, res) => {
         page_size: String(perPage),
         license_type: OPENVERSE_LICENSE_TYPE
       });
+      if (sourceParam) {
+        params.set('source', sourceParam);
+      }
 
       const response = await getFetch()(`${OPENVERSE_API_URL}?${params.toString()}`, {
         headers: { 'User-Agent': 'anam-travel-agent/1.0' }

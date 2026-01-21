@@ -165,7 +165,7 @@ const getInitialCityId = (): CityId => {
 };
 
 const buildOpeningLine = (cityName: string) =>
-  `Hi! I'm your travel agent, and I can propose visits to Tunis or Istanbul. Shall we start with ${cityName}?`;
+  `Hello! I'm Sofia, your travel agent. I've got bright ideas for Tunis and Istanbul. Want to start with ${cityName}?`;
 
 const buildStarterPrompt = (cityName: string) =>
   `Please reply with this exact opening line: "${buildOpeningLine(cityName)}" and then wait for my choice before starting the tour.`;
@@ -689,6 +689,27 @@ const TravelAgentDemo = () => {
     streetViewStatus === 'ready' ||
     streetViewStatus === 'loading' ||
     (showStreetViewDiagnostics && streetViewStatus !== 'idle');
+
+  useEffect(() => {
+    const originalWarn = console.warn;
+    const warningPattern = /tcp connect to\s*\(127\.0\.0\.1\s*:\s*3000\)\s*failed/i;
+
+    console.warn = (...args: unknown[]) => {
+      const first = args[0];
+      const message =
+        typeof first === 'string'
+          ? first
+          : args.map((arg) => (typeof arg === 'string' ? arg : '')).join(' ');
+      if (warningPattern.test(message)) {
+        return;
+      }
+      originalWarn(...(args as Parameters<typeof console.warn>));
+    };
+
+    return () => {
+      console.warn = originalWarn;
+    };
+  }, []);
 
   const updateDebugMetrics = (updates: Partial<DebugMetrics>) => {
     setDebugMetrics((prev) => {
@@ -1391,12 +1412,15 @@ const TravelAgentDemo = () => {
       try {
         const providerParam = PHOTO_PROVIDER ? `&provider=${encodeURIComponent(PHOTO_PROVIDER)}` : '';
         const excludeTerms = currentLandmark.photoExclude ?? [];
+        const sourceParam = currentLandmark.photoSource?.length
+          ? `&source=${encodeURIComponent(currentLandmark.photoSource.join(','))}`
+          : '';
         const excludeParam = excludeTerms.length
           ? `&exclude=${encodeURIComponent(excludeTerms.join(','))}`
           : '';
         const excludePeopleParam = EXCLUDE_PEOPLE ? '&excludePeople=true' : '';
         const response = await fetch(
-          `${BACKEND_URL}/api/photos?q=${encodeURIComponent(query)}&perPage=6${providerParam}${excludeParam}${excludePeopleParam}`,
+          `${BACKEND_URL}/api/photos?q=${encodeURIComponent(query)}&perPage=6${providerParam}${sourceParam}${excludeParam}${excludePeopleParam}`,
           { signal: controller.signal }
         );
         const data = (await response.json()) as {
@@ -2739,8 +2763,20 @@ ${citySummaries}`;
                   </a>
                   {activeLandmarkImage.author && ` by ${activeLandmarkImage.author}`}
                   {activeLandmarkImage.provider && ` - ${activeLandmarkImage.provider}`}
-                  {activeLandmarkImage.source === 'openverse' && activeLandmarkImage.license &&
-                    ` (${activeLandmarkImage.license})`}
+                  {activeLandmarkImage.source === 'openverse' && activeLandmarkImage.license && (
+                    <>
+                      {' '}
+                      | License:{' '}
+                      {activeLandmarkImage.licenseUrl ? (
+                        <a href={activeLandmarkImage.licenseUrl} target="_blank" rel="noreferrer">
+                          {activeLandmarkImage.license}
+                        </a>
+                      ) : (
+                        activeLandmarkImage.license
+                      )}
+                      {' '}| Modified for display
+                    </>
+                  )}
                 </div>
               )}
               <h2>{currentLandmark.name}</h2>

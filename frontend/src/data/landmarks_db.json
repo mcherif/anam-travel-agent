@@ -48,10 +48,7 @@
           "Zitouna Mosque - spiritual heart of the medina",
           "Traditional souks and markets"
         ],
-        "imageUrl": "https://images.pexels.com/photos/27680733/pexels-photo-27680733.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
-        "imageUrls": [
-          "https://images.pexels.com/photos/27680733/pexels-photo-27680733.jpeg?auto=compress&cs=tinysrgb&h=650&w=940"
-        ],
+        "imageUrl": "https://live.staticflickr.com/6/7624403_f160f79a84_b.jpg",
         "zoom": 18,
         "videoUrl": "https://videos.pexels.com/video-files/18468231/18468231-sd_426_240_25fps.mp4",
         "photoExclude": [
@@ -83,10 +80,7 @@
           "Traditional courtyard and prayer hall",
           "Center of learning for centuries"
         ],
-        "imageUrl": "https://images.pexels.com/photos/15971159/pexels-photo-15971159.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
-        "imageUrls": [
-          "https://images.pexels.com/photos/15971159/pexels-photo-15971159.jpeg?auto=compress&cs=tinysrgb&h=650&w=940"
-        ],
+        "imageUrl": "https://images.pexels.com/photos/27680733/pexels-photo-27680733.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
         "zoom": 18.5,
         "videoUrl": "https://videos.pexels.com/video-files/18468232/18468232-sd_426_240_25fps.mp4"
       },
@@ -115,7 +109,7 @@
         "imageUrl": "https://images.pexels.com/photos/27350496/pexels-photo-27350496.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
         "zoom": 18,
         "imageUrls": [
-          "https://images.pexels.com/photos/27350496/pexels-photo-27350496.jpeg?auto=compress&cs=tinysrgb&h=650&w=940"
+          "https://images.pexels.com/photos/15971159/pexels-photo-15971159.jpeg?auto=compress&cs=tinysrgb&h=650&w=940"
         ]
       },
       {
@@ -140,10 +134,7 @@
           "Islamic art and manuscripts"
         ],
         "imageUrl": "https://images.pexels.com/photos/31171039/pexels-photo-31171039.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
-        "zoom": 18,
-        "imageUrls": [
-          "https://images.pexels.com/photos/31171039/pexels-photo-31171039.jpeg?auto=compress&cs=tinysrgb&h=650&w=940"
-        ]
+        "zoom": 18
       },
       {
         "id": "sidi-bou-said",
@@ -164,6 +155,9 @@
         "description": "Picturesque cliff-side village with a Mediterranean marina and blue-and-white architecture",
         "foundedYear": "12th century",
         "photoQuery": "Sidi Bou Said marina port Tunisia",
+        "photoSource": [
+          "flickr"
+        ],
         "photoExclude": [
           "street",
           "door",
@@ -209,7 +203,6 @@
         ],
         "imageUrl": "https://images.pexels.com/photos/27967400/pexels-photo-27967400.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
         "imageUrls": [
-          "https://images.pexels.com/photos/27967400/pexels-photo-27967400.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
           "https://images.pexels.com/photos/20190776/pexels-photo-20190776.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
           "https://images.pexels.com/photos/27594856/pexels-photo-27594856.jpeg?auto=compress&cs=tinysrgb&h=650&w=940"
         ],
@@ -255,7 +248,6 @@
         "zoom": 18.7,
         "videoUrl": "https://videos.pexels.com/video-files/6350082/6350082-sd_960_540_30fps.mp4",
         "imageUrls": [
-          "https://images.pexels.com/photos/13908547/pexels-photo-13908547.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
           "https://images.pexels.com/photos/17565155/pexels-photo-17565155.jpeg?auto=compress&cs=tinysrgb&h=650&w=940"
         ]
       },
@@ -284,7 +276,6 @@
         "zoom": 18.7,
         "videoUrl": "https://videos.pexels.com/video-files/28077962/12294868_2160_3840_60fps.mp4",
         "imageUrls": [
-          "https://images.pexels.com/photos/28275993/pexels-photo-28275993.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
           "https://images.pexels.com/photos/35235466/pexels-photo-35235466.jpeg?auto=compress&cs=tinysrgb&h=650&w=940"
         ]
       },
@@ -312,7 +303,6 @@
         "imageUrl": "https://images.pexels.com/photos/30380764/pexels-photo-30380764.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
         "zoom": 18.6,
         "imageUrls": [
-          "https://images.pexels.com/photos/30380764/pexels-photo-30380764.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
           "https://images.pexels.com/photos/17957956/pexels-photo-17957956.jpeg?auto=compress&cs=tinysrgb&h=650&w=940"
         ],
         "videoUrl": "https://videos.pexels.com/video-files/26833659/12016830_1280_720_30fps.mp4"
@@ -340,10 +330,7 @@
         ],
         "imageUrl": "https://images.pexels.com/photos/14929446/pexels-photo-14929446.jpeg?auto=compress&cs=tinysrgb&h=650&w=940",
         "zoom": 18.5,
-        "videoUrl": "https://videos.pexels.com/video-files/31821993/13557768_360_640_60fps.mp4",
-        "imageUrls": [
-          "https://images.pexels.com/photos/14929446/pexels-photo-14929446.jpeg?auto=compress&cs=tinysrgb&h=650&w=940"
-        ]
+        "videoUrl": "https://videos.pexels.com/video-files/31821993/13557768_360_640_60fps.mp4"
       }
     ]
   }

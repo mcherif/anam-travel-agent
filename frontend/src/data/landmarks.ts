@@ -11,6 +11,7 @@ export type Landmark = {
   imageUrl: string;
   imageUrls?: string[];
   photoQuery?: string;
+  photoSource?: string[];
   photoExclude?: string[];
   videoUrl?: string;
   videoQuery?: string;
